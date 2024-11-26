@@ -1,5 +1,5 @@
 from math import ceil
-from flask import Flask, render_template, request, session, redirect, url_for
+from flask import Flask, flash, render_template, request, session, redirect, url_for
 import mysql.connector
 
 app = Flask(__name__)
@@ -79,9 +79,64 @@ def home():
     else:
         return redirect(url_for('login'))
 
-@app.route('/signup')
+@app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    return render_template('signup.html')
+    # to get location name and data from database
+    if request.method == 'GET':
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        cursor.execute("SELECT location_id, location_name from Location")  
+        location=cursor.fetchall()
+
+    # to add new user to database
+    if request.method == 'POST':
+        volunteer_name = request.form['name']
+        volunteer_contact = request.form['contact']
+        volunteer_email = request.form['email']
+        volunteer_address = request.form['address']
+        volunteer_password = request.form['password']
+        location_id = request.form['location_dropdown']
+        error = None
+
+        if not volunteer_name:
+            error = 'Name is required.'
+        elif not volunteer_contact:
+            error = 'Contact is required.'
+        elif not volunteer_email:
+            error = 'Email is required.'
+        elif not volunteer_address:
+            error = 'address is required.'
+        elif not volunteer_password:
+            error = 'Password is required.'
+        elif not location_id:
+            error = 'Choose a location.'
+
+        if error is None :
+            try:
+                connection = get_db_connection()
+                cursor = connection.cursor(dictionary=True)
+                query = "SELECT * FROM Volunteer WHERE volunteer_contact = %s"
+                cursor.execute(query, (volunteer_contact,))
+                user = cursor.fetchone()
+
+                if user :
+                    error = f"User {volunteer_name} is already registered."
+                    return redirect(url_for('signup'))
+                    
+                else:
+                    query = "INSERT INTO Volunteer WHERE volunteer_name = %s AND volunteer_contact = %s AND volunteer_password = %s AND volunteer_email = %s AND volunteer_address = %s AND location_id = %s"
+                    cursor.execute(query, (volunteer_name, volunteer_contact, volunteer_password, volunteer_email, volunteer_address, location_id ))
+                    return redirect(url_for("login"))
+
+            finally:
+                if connection.is_connected():
+                    cursor.close()
+                    connection.close()
+        flash(error)
+
+        
+    return render_template('signup.html', location = location)
 
 @app.route('/dashboard')
 def dashboard():

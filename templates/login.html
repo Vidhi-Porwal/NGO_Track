@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='styles.css')}}">
 </head>
 <body class="login-page">
     <div class="login-container">
-        <h2 class="login-title">Login</h2>
+        <h1>Login Form</h1>
+        <!-- <h2 class="login-title">Login</h2> -->
         <form action="{{ url_for('login') }}" method="POST">
             <div class="input-wrapper">
                 <label for="phone_no">Phone No.:</label>
