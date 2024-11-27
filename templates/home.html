@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Welcome, {{ user['name'] }}</title>
+    <title>Welcome, {{ user }}</title>
 </head>
 <body>
-    <h1>Welcome back, {{ user['name'] }}!</h1>
+    <h1>Welcome back, {{ user }}!</h1>
+    <p>We are glad to see you back.</p>
     <a href="{{ url_for('logout') }}">Logout</a>
 </body>
 </html>

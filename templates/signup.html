@@ -96,6 +96,7 @@
             <select id="dropdown" name="location_dropdown" required>
               <!-- add dropdown location code -->
                 <ul class="dropdown-menu" >
+                    <option value="" disabled selected>Select your location</option>
                     {% for row in location %}
                         <li>
                             <option value="{{row['location_id']}}">{{row['location_name']}}</option>

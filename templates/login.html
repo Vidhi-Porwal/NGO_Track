@@ -9,7 +9,17 @@
 <body class="login-page">
     <div class="login-container">
         <h1>Login Form</h1>
-        <!-- <h2 class="login-title">Login</h2> -->
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="error-messages">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
         <form action="{{ url_for('login') }}" method="POST">
             <div class="input-wrapper">
                 <label for="phone_no">Phone No.:</label>
