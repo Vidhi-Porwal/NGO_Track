@@ -1,36 +1,21 @@
 from math import ceil
 from flask import Flask, flash, render_template, request, session, redirect, url_for
+from auth import auth_bp, get_db_connection, login_required
 import mysql.connector
-from functools import wraps
 
 
 app = Flask(__name__)
 app.secret_key = 'DEV'  # Set a secret key for session management
 
-# Database connection
-def get_db_connection():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="Vidhi@3112",
-        database="rha"
-    )
+app.register_blueprint(auth_bp, url_prefix='/auth')
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user' not in session:  # Check for 'user' session key
-            flash("You need to be logged in to access this page.")
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function
-
 
 @app.route('/Location')
+@login_required
 def Location():
     page=request.args.get('page',1,type=int)
     per_page=5
@@ -50,121 +35,109 @@ def Location():
 
     return render_template('location.html', location_i=location,page=page, total_pages=total_pages)
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        phone_no = request.form.get('phone_no')  # Use .get() to avoid KeyError
-        password = request.form['password']
 
-        # Check credentials in the database
+@app.route('/home', methods=['GET', 'POST'])
+@login_required
+def home():
+    if request.method == 'GET':
+        print("Session content:", session)  # This will show the session contents in the console
+        if 'user' in session:
+            user = session['user']
+            location_id = session['location']
+
+
+            try:
+                page=request.args.get('page',1,type=int)
+                per_page=6
+                offset=(page-1)*per_page
+
+
+                connection = get_db_connection()
+                cursor = connection.cursor(dictionary=True)
+
+                # Get total count of students
+                count_query = "SELECT COUNT(*) AS total FROM Student WHERE location_id = %s"
+                cursor.execute(count_query, (location_id,))
+                total_students = cursor.fetchone()['total']
+
+                if total_students == 0:
+                    flash("No students in your location.")
+                    return render_template('home.html', user=user, students=[], page=page, total_pages=0)
+
+                query = """SELECT s.student_name, sch.school_name, g.grade_year, s.student_id
+                            FROM Student s
+                            LEFT JOIN Student_school_grade ssg ON s.student_id = ssg.student_id
+                            LEFT JOIN School sch ON ssg.school_id = sch.school_id
+                            LEFT JOIN Grade g ON ssg.grade_id = g.grade_id
+                            WHERE s.location_id = %s
+                            LIMIT %s OFFSET %s;
+                            """
+                # query = "SELECT * FROM Student WHERE location_id = %s "
+                cursor.execute(query, (location_id,per_page, offset))
+                students = cursor.fetchall()
+        
+                total_pages = (total_students + per_page - 1) // per_page
+                
+                return render_template('home.html', user=user, students=students,page=page, total_pages=total_pages)
+
+                   
+
+            except mysql.connector.Error as err:
+                return f"Database error: {err}"
+
+            finally:
+                if connection.is_connected():
+                    cursor.close()  
+                    connection.close()
+
+        else:
+            flash("You need to log in to view this page.")
+            return redirect(url_for('auth.login'))
+    return render_template('home.html', user=user)
+
+
+
+@app.route('/Dashboard')
+@login_required
+def Dashboard():
+    return render_template('dashboard.html')
+
+
+@app.route('/student_profile/<int:student_id>')
+@login_required
+def student_profile(student_id):
+    if 'user' in session:
+        user = session['user']
+        location_id = session['location']
+
         try:
             connection = get_db_connection()
             cursor = connection.cursor(dictionary=True)
-            query = "SELECT * FROM Volunteer WHERE volunteer_contact = %s AND volunteer_password = %s"
-            cursor.execute(query, (phone_no, password))
-            user = cursor.fetchone()
+            query = """SELECT s.student_id , s.student_name , s.student_age , s.parent_name , s.parent_contact , s.student_documentation , sch.school_name , l.location_name , g.grade_year 
+                FROM Student s
+                LEFT JOIN Student_school_grade ssg ON s.student_id = ssg.student_id
+                LEFT JOIN School sch ON ssg.school_id = sch.school_id
+                LEFT JOIN Grade g ON ssg.grade_id = g.grade_id
+                LEFT JOIN Location l ON s.location_id = l.location_id
+                WHERE s.student_id = %s
+                """
 
-            if user:
-                session['user'] = user['volunteer_name']
-                return redirect(url_for('home'))
+            cursor.execute(query, (student_id,))
+            student = cursor.fetchone()
 
-            else:
-                flash("Invalid Phone No. or Password. Please try again.")
-                return redirect(url_for('login'))
+            if not student:
+                return render_template('404.html'), 404
+            return render_template('student_profile.html', student=student, user=user)
+
 
         except mysql.connector.Error as err:
-            return f"Database error: {err}"
+            return f"Error fetching student profile: {err}"
 
         finally:
             if connection.is_connected():
                 cursor.close()  
                 connection.close()
-
-    return render_template('login.html')
-
-
-@app.route('/home')
-@login_required
-def home():
-    print("Session content:", session)  # This will show the session contents in the console
-    if 'user' in session:
-        user = session['user']
-        return render_template('home.html', user=user)
-    else:
-        flash("You need to log in to view this page.")
-        return redirect(url_for('login'))
-
-
-
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    # to get location name and data from database
-    if request.method == 'GET':
-        connection = get_db_connection()
-        cursor = connection.cursor(dictionary=True)
-
-        cursor.execute("SELECT location_id, location_name from Location")  
-        location=cursor.fetchall()
-
-    # to add new user to database
-    if request.method == 'POST':
-        # import pdb; pdb.set_trace()
-        volunteer_name = request.form['name']
-        volunteer_contact = request.form['contact']
-        volunteer_email = request.form['email']
-        volunteer_address = request.form['address']
-        volunteer_password = request.form['password']
-        location_id = request.form['location_dropdown']
-        error = None
-
-        if not volunteer_name:
-            error = 'Name is required.'
-        elif not volunteer_contact:
-            error = 'Contact is required.'
-        elif not volunteer_email:
-            error = 'Email is required.'
-        elif not volunteer_address:
-            error = 'address is required.'
-        elif not volunteer_password:
-            error = 'Password is required.'
-        elif not location_id:
-            error = 'Choose a location.'
-
-        if error is None :
-            try:
-                connection = get_db_connection()
-                cursor = connection.cursor(dictionary=True)
-                query = "SELECT * FROM Volunteer WHERE volunteer_contact = %s"
-                cursor.execute(query, (volunteer_contact,))
-                user = cursor.fetchone()
-                # import pdb; pdb.set_trace()
-                if user :
-                    error = f"User {volunteer_name} is already registered."
-                    return redirect(url_for('signup'))
-                 
-                else:
-                    print (location_id)
-                    query = """INSERT INTO Volunteer (volunteer_name, volunteer_contact, volunteer_password, volunteer_email, volunteer_address, location_id) VALUES (%s, %s, %s, %s, %s, %s)"""
-                    cursor.execute(query, (volunteer_name, volunteer_contact, volunteer_password, volunteer_email, volunteer_address, location_id))
-                    connection.commit()
-                    return redirect(url_for("login"))
-
-            finally:
-                if connection.is_connected():
-                    cursor.close()
-                    connection.close()
-
-        flash(error)
-
-    return render_template('signup.html', location = location)
-
-
-@app.route('/logout')
-def logout():
-    session.pop('user', None)
-    flash("You have been logged out.")
-    return redirect(url_for('login'))
-
+    return render_template('student_profile.html')
 
 
 if __name__ == '__main__':

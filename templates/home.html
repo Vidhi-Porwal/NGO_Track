@@ -1,12 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Welcome, {{ user }}</title>
-</head>
-<body>
-    <h1>Welcome back, {{ user }}!</h1>
-    <p>We are glad to see you back.</p>
-    <a href="{{ url_for('logout') }}">Logout</a>
-</body>
-</html>
+{% extends "layout.html" %}
+
+{% block title %}Home{% endblock %}
+<div class="container flex-grow-1">
+{% block content %}
+<h1>Welcome back, {{ user }}!</h1>
+<hr class="featurette-divider">
+
+
+<div class="row-container">
+    <div class="row">
+        {% if students %}
+            {% for student in students %}
+            <div class="col-lg-4">
+                <img src="{{ url_for('static', filename='uploads/kid.jpg') }}" 
+                     alt="Personal Image" 
+                     style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 5px solid #ccc;">
+                <h2 class="fw-normal">{{ student.student_name }}</h2>
+                <p>School Name: {{ student.school_name }}<br>Grade: {{ student.grade_year }}</p>
+                <p><a class="btn btn-secondary" href="{{ url_for('student_profile', student_id=student.student_id) }}">Profile &raquo;</a></p>
+            </div>
+            {% endfor %}
+        {% else %}
+            <h2>No students in this location!</h2>
+        {% endif %}
+    </div>
+</br></br></br>
+    <nav aria-label="Page navigation">
+      <ul class="pagination justify-content-center">
+        {% if page > 1 %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('home', page=page-1) }}">Previous</a>
+          </li>
+        {% endif %}
+        {% for p in range(1, total_pages + 1) %}
+          <li class="page-item {% if p == page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('home', page=p) }}">{{ p }}</a>
+          </li>
+        {% endfor %}
+        {% if page < total_pages %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('home', page=page+1) }}">Next</a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+</div>
+{% endblock %}
+</div>
