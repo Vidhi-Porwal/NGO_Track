@@ -1,13 +1,16 @@
 from math import ceil
 from flask import Flask, flash, render_template, request, session, redirect, url_for
 from auth import auth_bp, get_db_connection, login_required
+from student import student_bp 
 import mysql.connector
+
 
 
 app = Flask(__name__)
 app.secret_key = 'DEV'  # Set a secret key for session management
 
 app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(student_bp)
 
 @app.route('/')
 def index():
@@ -35,6 +38,26 @@ def Location():
 
     return render_template('location.html', location_i=location,page=page, total_pages=total_pages)
 
+@app.route('/Schools')
+@login_required
+def Schools():
+    page=request.args.get('page',1,type=int)
+    per_page=5
+    offset=(page-1)*per_page   #starting point for current page
+    
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    cursor.execute("SELECT COUNT(*) AS total from School")  #total no of rows in location table
+    total=cursor.fetchone()['total']
+
+    cursor.execute("SELECT * FROM School LIMIT %s OFFSET %s",(per_page,offset))
+    schools = cursor.fetchall()
+    cursor.close()
+    connection.close()
+    total_pages = ceil(total / per_page)
+
+    return render_template('school.html', schools=schools ,page=page, total_pages=total_pages)
 
 @app.route('/home', methods=['GET', 'POST'])
 @login_required
@@ -101,43 +124,6 @@ def home():
 @login_required
 def Dashboard():
     return render_template('dashboard.html')
-
-
-@app.route('/student_profile/<int:student_id>')
-@login_required
-def student_profile(student_id):
-    if 'user' in session:
-        user = session['user']
-        location_id = session['location']
-
-        try:
-            connection = get_db_connection()
-            cursor = connection.cursor(dictionary=True)
-            query = """SELECT s.student_id , s.student_name , s.student_age , s.parent_name , s.parent_contact , s.student_documentation , sch.school_name , l.location_name , g.grade_year 
-                FROM Student s
-                LEFT JOIN Student_school_grade ssg ON s.student_id = ssg.student_id
-                LEFT JOIN School sch ON ssg.school_id = sch.school_id
-                LEFT JOIN Grade g ON ssg.grade_id = g.grade_id
-                LEFT JOIN Location l ON s.location_id = l.location_id
-                WHERE s.student_id = %s
-                """
-
-            cursor.execute(query, (student_id,))
-            student = cursor.fetchone()
-
-            if not student:
-                return render_template('404.html'), 404
-            return render_template('student_profile.html', student=student, user=user)
-
-
-        except mysql.connector.Error as err:
-            return f"Error fetching student profile: {err}"
-
-        finally:
-            if connection.is_connected():
-                cursor.close()  
-                connection.close()
-    return render_template('student_profile.html')
 
 
 if __name__ == '__main__':

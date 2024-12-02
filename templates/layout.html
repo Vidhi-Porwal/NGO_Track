@@ -9,6 +9,7 @@
     <meta name="generator" content="Hugo 0.122.0">
     <title>{% block title %}Welcome{% endblock %}</title>
 
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
     <link href="{{url_for('static', filename='bootstrap.min.css')}}" rel="stylesheet">
     <style>
@@ -18,7 +19,7 @@
 </head>
 <body>
 <main class="d-flex flex-nowrap">
-    <div class="d-flex flex-column flex-shrink-0 p-3 bg-body-tertiary min-vh-100" style="width: 280px;">
+    <div class="d-flex flex-column flex-shrink-0 p-3 bg-body-tertiary vh-100" style="width: 280px;">
     <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none">
         <img src="{{ url_for('static', filename='uploads/rha_green.jpeg') }}" 
              width="40" height="40" alt="RHA Logo" style="margin-right: 8px;" />
@@ -27,10 +28,10 @@
     <hr>
     <ul class="nav nav-pills flex-column mb-auto">
         <li class="nav-item">
-            <a href="#" class="nav-link active" aria-current="page">Home</a>
+            <a href="{{ url_for('home') }}" class="nav-link link-body-emphasis">Home</a>
         </li>
         <li><a href="{{ url_for('Location') }}" class="nav-link link-body-emphasis">Locations</a></li>
-        <li><a href="#" class="nav-link link-body-emphasis">Orders</a></li>
+        <li><a href="{{ url_for('Schools') }}" class="nav-link link-body-emphasis">Schools</a></li>
         <li><a href="#" class="nav-link link-body-emphasis">Products</a></li>
         <li><a href="#" class="nav-link link-body-emphasis">Customers</a></li>
     </ul>
@@ -42,13 +43,37 @@
                  alt="Profile Image" width="32" height="32" class="rounded-circle me-2">
             <strong>{{ user }}</strong>
         </a>
-        <ul class="dropdown-menu text-small shadow">
+        <ul class="dropdown-menu text-small shadow" aria-label="User menu">
             <li><a class="dropdown-item" href="#">Profile</a></li>
-            <li><hr class="dropdown-divider"></li>
+            <li><hr class="dropdown-divider" aria-hidden="true"></li>
             <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Log Out</a></li>
         </ul>
+
+        </div>
     </div>
-</div>
+        <nav class="navbar navbar-light d-md-none">
+        <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </nav>
+    <div class="offcanvas offcanvas-start d-md-none" id="mobileSidebar">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">Menu</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <!-- Sidebar content duplicated here -->
+            <ul class="nav nav-pills flex-column">
+                <li class="nav-item">
+                    <a href="{{ url_for('home') }}" class="nav-link {% if request.endpoint == 'home' %}active{% endif %}">Home</a>
+                </li>
+                <li><a href="{{ url_for('Location') }}" class="nav-link {% if request.endpoint == 'Location' %}active{% endif %}">Locations</a></li>
+                <li><a href="#" class="nav-link {% if request.endpoint == 'Orders' %}active{% endif %}">Orders</a></li>
+                <li><a href="#" class="nav-link {% if request.endpoint == 'Products' %}active{% endif %}">Products</a></li>
+                <li><a href="#" class="nav-link {% if request.endpoint == 'Customers' %}active{% endif %}">Customers</a></li>
+            </ul>
+        </div>
+    </div>
 
     <div class="container">
         {% block content %}

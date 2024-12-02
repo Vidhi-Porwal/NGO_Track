@@ -1,46 +1,64 @@
 {% extends "layout.html" %}
-{% block title %}
+{% block title %}{{ student.student_name }}{% endblock %}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ student.student_name }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='student_profile.css') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='student_profile.css') }}">
 {% endblock %}
-
 <body>
     {% block content %}
-    <div class="container">
-        <div class="card text-center">
-            <div class="text-center">
-                <img src="{{ url_for('static', filename='uploads/kid.jpg') }}" 
-                     alt="Personal Image" 
-                     style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 5px solid #ccc;">
-            </div>
-            <div class="text-center mt-3">
-                <!-- <span class="bg-secondary p-1 px-4 rounded text-white">Pro</span> -->
-                <h2 class="mt-2 mb-0">{{ student.student_name }}</h2>
-                <span>AGE : {{ student.student_age }}</span>
-                <div class="px-4 mt-1">
-                    <p>Parent Name : {{ student.parent_name }}</p>
+    <main class="d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+        <div class="container">
+            <div class="card text-center">
+                <div class="text-center">
+                    <img src="{{ url_for('static', filename='uploads/kid.jpg') }}" 
+                         alt="Profile picture of {{ student.student_name }}" 
+                         style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 5px solid #ccc;">
                 </div>
-                <ul class="social-list d-flex justify-content-center list-unstyled">
-                    <li class="me-3"><i class="fa fa-facebook"></i></li>
-                    <li class="me-3"><i class="fa fa-dribbble"></i></li>
-                    <li class="me-3"><i class="fa fa-instagram"></i></li>
-                    <li class="me-3"><i class="fa fa-linkedin"></i></li>
-                    <li><i class="fa fa-google"></i></li>
-                </ul>
-                <div class="buttons">
-                    <button class="btn btn-outline-primary px-4">Edit</button>
-                    <!-- <button class="btn btn-primary px-4 ms-3">Edit</button> -->
+                <div class="text-center mt-3">
+                    <h2 class="mt-2 mb-0">{{ student.student_name }}</h2>
+                    <span>AGE : {{ student.student_age }}</span>
+                    <div class="px-4 mt-1">
+                        <p>
+                            Parent Name: {{ student.parent_name }}<br>
+                            Contact No.: {{ student.parent_contact }}<br>
+                            Grade: {{ student.grade_year }}<br>
+                            School Name: {{ student.school_name }}<br>
+                            Documentation: {{ student.student_documentation if student.student_documentation else "Not Provided" }}
+                        </p>
+                    </div>
+                    <h1>Subjects</h1>
+                    {% if student_subjects %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <tr>
+                                <th>S.No.</th>
+                                <th>Subject Name</th>
+                                <th>Subject Score</th>
+                                <th>Remark</th>
+                            </tr>
+                            {% for stud in student_subjects %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ stud['subject_name'] }}</td>
+                                <td>{{ stud['subject_score'] }}</td>
+                                <td>{{ stud['subject_progress'] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                    {% else %}
+                    <p>No subjects found for this student.</p>
+                    {% endif %}
+                    <div class="buttons mt-4">
+                        <a href="{{ url_for('student.edit_student', student_id = student.student_id) }}">
+                            <button class="btn btn-outline-primary px-4">Edit</button>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
     {% endblock %}
 </body>
 </html>

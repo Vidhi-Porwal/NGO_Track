@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block title %}Home{% endblock %}
-<div class="container flex-grow-1">
+
 {% block content %}
 <h1>Welcome back, {{ user }}!</h1>
 <hr class="featurette-divider">
@@ -17,7 +17,7 @@
                      style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 5px solid #ccc;">
                 <h2 class="fw-normal">{{ student.student_name }}</h2>
                 <p>School Name: {{ student.school_name }}<br>Grade: {{ student.grade_year }}</p>
-                <p><a class="btn btn-secondary" href="{{ url_for('student_profile', student_id=student.student_id) }}">Profile &raquo;</a></p>
+                <p><a class="btn btn-secondary" href="{{ url_for('student.student_profile', student_id=student.student_id) }}">Profile &raquo;</a></p>
             </div>
             {% endfor %}
         {% else %}

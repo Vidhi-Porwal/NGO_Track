@@ -13,6 +13,7 @@ main {
   max-height: 100vh;
   overflow-x: auto;
   overflow-y: hidden;
+  display: flex;
 }
 
 .dropdown-toggle { outline: 0; }
@@ -61,3 +62,25 @@ main {
 .scrollarea {
   overflow-y: auto;
 }
+
+.dropdown .dropdown-menu {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item:hover {
+    background-color: #e2e6ea;
+    color: #000;
+}
+
+
+<style>
+    @media (max-width: 768px) {
+        .sidebar {
+            width: 100%; /* Make sidebar full-width on smaller screens */
+            position: fixed; /* Fix it at the top */
+            z-index: 1030; /* Ensure it stays on top of other elements */
+        }
+    }
+</style>

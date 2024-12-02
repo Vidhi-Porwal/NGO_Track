@@ -1,43 +1,64 @@
+{% extends "layout.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Sellers</title>
-</head>
-<body>
-    <h1>Location List</h1>
-    <table>
-        <tr>
-            <th>NAME</th>
-            <th>ADDRESS</th>
-            <th>CAPACITY</th>
-            <th>POC</th>
-            <th>POC Contact</th>
-        </tr>
-        {% for location in location_i %}
-        <tr>
-            <td>{{ location['location_name'] }}</td>
-            <td>{{ location['location_address'] }}</td>
-            <td>{{ location['location_capacity'] }}</td>
-            <td>{{ location['location_POC'] }}</td>
-            <td>{{ location['location_POC_contact'] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-    <div class="pagination">
-    {% if page > 1 %}
-    <a href="{{url_for('Location',page=page-1) }}">Previous</a>
-    {% endif %}
+{% block title %}Location List{% endblock %}
 
-    {% for i in range(1, total_pages+1) %}
-    <a href="{{url_for('Location',page=i)}}" class="{{ 'active' if i == page else '' }}">{{ i }}</a>
-    {% endfor %}
+{% block content %}
+<main class="d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+    <div class="container text-center">
+        <h1 class="my-4">LOCATIONS</h1>
 
-    {% if page < total_pages %}
-    <a href="{{url_for('Location',page=page+1) }}">Next</a>
-    {% endif %}
+        <div class="table-responsive mt-4">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>S.No.</th>
+                        <th>NAME</th>
+                        <th>ADDRESS</th>
+                        <th>CAPACITY</th>
+                        <th>POC</th>
+                        <th>POC Contact</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for location in location_i %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ location['location_name'] }}</td>
+                        <td>{{ location['location_address'] }}</td>
+                        <td>{{ location['location_capacity'] }}</td>
+                        <td>{{ location['location_POC'] }}</td>
+                        <td>{{ location['location_POC_contact'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if total_pages > 1 %}
+            <!-- If there are pages, display pagination -->
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page > 1 %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('Location', page=page-1) }}">Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for p in range(1, total_pages + 1) %}
+                        <li class="page-item {% if p == page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('Location', page=p) }}">{{ p }}</a>
+                        </li>
+                    {% endfor %}
+                    
+                    {% if page < total_pages %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('Location', page=page+1) }}">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+
     </div>
-    <a href="{{ url_for('index') }}">Back to Home</a>
-</body>
-</html>
+</main>
+{% endblock %}
