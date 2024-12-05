@@ -1,75 +1,86 @@
-# student.py
-
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, g
 import mysql.connector
 from auth import login_required, get_db_connection
 
-
 student_bp = Blueprint('student', __name__)
+
+def log_session():
+    print("Session Details:")
+    for key, value in session.items():
+        print(f"{key}: {value}")
+
+@student_bp.before_request
+def load_user_from_session():
+    g.user = session.get('user')
+    g.location = session.get('location')
+
+    if not g.user or not g.location:
+        flash("Session expired. Please log in.")
+        return redirect(url_for('auth.login'))
+
 
 @student_bp.route('/student_profile/<int:student_id>')
 @login_required
 def student_profile(student_id):
-    if 'user' in session:
-        user = session['user']
-        location_id = session['location']
+    log_session()
 
-        try:
-            connection = get_db_connection()
-            cursor = connection.cursor(dictionary=True)
-            query = """SELECT s.student_id , s.student_name , s.student_age , s.parent_name , s.parent_contact , s.student_documentation , sch.school_name , l.location_name , g.grade_year 
-                        FROM Student s
-                        LEFT JOIN Student_school_grade ssg ON s.student_id = ssg.student_id
-                        LEFT JOIN School sch ON ssg.school_id = sch.school_id
-                        LEFT JOIN Grade g ON ssg.grade_id = g.grade_id
-                        LEFT JOIN Location l ON s.location_id = l.location_id
-                        WHERE s.student_id = %s
-                        """
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
 
-            cursor.execute(query, (student_id,))
-            student = cursor.fetchone()
+        query = """SELECT s.student_id , s.student_name , s.student_age , s.parent_name , s.parent_contact , s.student_documentation , sch.school_name , l.location_name , g.grade_year 
+                   FROM Student s
+                   LEFT JOIN Student_school_grade ssg ON s.student_id = ssg.student_id
+                   LEFT JOIN School sch ON ssg.school_id = sch.school_id
+                   LEFT JOIN Grade g ON ssg.grade_id = g.grade_id
+                   LEFT JOIN Location l ON s.location_id = l.location_id
+                   WHERE s.student_id = %s"""
+        cursor.execute(query, (student_id,))
+        student = cursor.fetchone()
 
-            query = """SELECT sub.subject_name , ss.subject_score , ss.subject_progress
-                        FROM Student s
-                        LEFT JOIN Student_Subject ss ON s.student_id = ss.student_id
-                        LEFT JOIN Subject sub ON ss.Subject_id = sub.Subject_id
-                        WHERE s.student_id = %s
-                        """
-            cursor.execute(query, (student_id,))
-            student_subjects = cursor.fetchall()
+        query = """SELECT sub.subject_name , ss.subject_score , ss.subject_progress
+                   FROM Student_Subject ss
+                   JOIN Subject sub ON ss.subject_id = sub.subject_id
+                   WHERE ss.student_id = %s"""
+        cursor.execute(query, (student_id,))
+        student_subjects = cursor.fetchall()
 
-            if not student:
-                return render_template('404.html'), 404
-            return render_template('student_profile.html', student=student, user=user, student_subjects=student_subjects)
+        if not student:
+            return render_template('404.html'), 404
 
-        except mysql.connector.Error as err:
-            return f"Error fetching student profile: {err}"
+        return render_template('student_profile.html', student=student, user=g.user, student_subjects=student_subjects)
 
-        finally:
-            if connection.is_connected():
-                cursor.close()
-                connection.close()
-    return render_template('student_profile.html')
+    except mysql.connector.Error as err:
+        return f"Error fetching student profile: {err}"
+
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
 
 
 @student_bp.route('/edit_student/<int:student_id>', methods=['GET', 'POST'])
 @login_required
 def edit_student(student_id):
-    connection = get_db_connection()
-    cursor = connection.cursor(dictionary=True)
-
+    log_session()
     try:
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+
         if request.method == 'POST':
-            # Handle student details update (same as before)
+            # import pdb; pdb.set_trace()
             student_age = request.form.get('student_age')
             parent_name = request.form.get('parent_name')
             parent_contact = request.form.get('parent_contact')
             grade_id = request.form.get('grade_id')
             school_id = request.form.get('school_id')
-            student_documentation = request.form.get('student_documentation', '')
+            student_documentation = request.form.get('student_documentation')
 
             updates = []
+            updates_1 = []
             values = []
+            values_1 = []
+
 
             if student_age:
                 updates.append("student_age = %s")
@@ -83,8 +94,15 @@ def edit_student(student_id):
             if student_documentation:
                 updates.append("student_documentation = %s")
                 values.append(student_documentation)
+            if school_id:
+                updates_1.append("school_id = %s")
+                values_1.append(school_id)
+            if grade_id:
+                updates_1.append("grade_id = %s")
+                values_1.append(grade_id)
 
-            if updates:
+
+            if updates: 
                 student_update_query = f"""
                     UPDATE Student
                     SET {', '.join(updates)}
@@ -93,85 +111,231 @@ def edit_student(student_id):
                 values.append(student_id)
                 cursor.execute(student_update_query, tuple(values))
 
-            # If grade_id or school_id is provided, update the Student_school_grade table
-            if grade_id or school_id:
-                grade_school_update_query = """
+
+            if updates_1:
+                student_update_query_1 = f"""
                     UPDATE Student_school_grade
-                    SET grade_id = IFNULL(%s, grade_id), school_id = IFNULL(%s, school_id)
+                    SET {', '.join(updates_1)}
                     WHERE student_id = %s
                 """
-                cursor.execute(grade_school_update_query, (grade_id, school_id, student_id))
+                values_1.append(student_id)  
+                print("SQL Query:", student_update_query_1)
+                print("Values:", values_1)  
+                cursor.execute(student_update_query_1, tuple(values_1))
 
-            # Handle subject update or addition
-            subject_name = request.form.get('subject_name')
-            subject_score = request.form.get('subject_score')
-            subject_progress = request.form.get('subject_progress')
 
-            # Check if subject fields are provided for adding a new subject
-            if subject_name and subject_score and subject_progress:
-                cursor.execute("""
-                    INSERT INTO Subject (subject_name)
-                    VALUES (%s)
-                """, (subject_name,))
-                subject_id = cursor.lastrowid  # Get the ID of the inserted subject
-
-                # Insert into Student_Subject table
-                cursor.execute("""
-                    INSERT INTO Student_Subject (student_id, subject_id, subject_score, subject_progress)
-                    VALUES (%s, %s, %s, %s)
-                """, (student_id, subject_id, subject_score, subject_progress))
-
-            # If editing existing subjects, handle the edit functionality
-            edit_subject_id = request.form.get('edit_subject_id')
-            if edit_subject_id:
-                cursor.execute("""
-                    UPDATE Student_Subject
-                    SET subject_score = %s, subject_progress = %s
-                    WHERE student_id = %s AND subject_id = %s
-                """, (subject_score, subject_progress, student_id, edit_subject_id))
-
-            # Delete subject if needed
-            delete_subject_id = request.form.get('delete_subject_id')
-            if delete_subject_id:
-                cursor.execute("""
-                    DELETE FROM Student_Subject
-                    WHERE student_id = %s AND subject_id = %s
-                """, (student_id, delete_subject_id))
-
-            connection.commit()  # Commit all changes
+            connection.commit()
 
             return redirect(url_for('student.edit_student', student_id=student_id))
 
-        # Fetch student data and dropdown data for school and grade
-        cursor.execute("SELECT * FROM Student WHERE student_id = %s", (student_id,))
+        query = """SELECT s.student_id , s.student_name , s.student_age , s.parent_name , s.parent_contact , s.student_documentation , sch.school_name , l.location_name , g.grade_year 
+                   FROM Student s
+                   LEFT JOIN Student_school_grade ssg ON s.student_id = ssg.student_id
+                   LEFT JOIN School sch ON ssg.school_id = sch.school_id
+                   LEFT JOIN Grade g ON ssg.grade_id = g.grade_id
+                   LEFT JOIN Location l ON s.location_id = l.location_id
+                   WHERE s.student_id = %s"""
+        cursor.execute(query, (student_id,))
         student = cursor.fetchone()
 
         if not student:
             return render_template('404.html'), 404
 
-        # Fetch school and grade data
         cursor.execute("SELECT * FROM School")
         schools = cursor.fetchall()
 
         cursor.execute("SELECT * FROM Grade")
         grades = cursor.fetchall()
 
-        # Fetch all subjects from the Subject table for the subject dropdown
         cursor.execute("SELECT * FROM Subject")
         subjects_list = cursor.fetchall()
 
-        # Fetch subjects for this student
         cursor.execute("""SELECT sub.subject_id, sub.subject_name, ss.subject_score, ss.subject_progress
                           FROM Student_Subject ss
                           LEFT JOIN Subject sub ON ss.subject_id = sub.subject_id
                           WHERE ss.student_id = %s""", (student_id,))
         subjects = cursor.fetchall()
 
-        return render_template('edit_student.html', student=student, schools=schools, grades=grades, subjects=subjects, subjects_list=subjects_list)
+        return render_template('edit_student.html', student_id=student_id, student=student, schools=schools, grades=grades, subjects=subjects, subjects_list=subjects_list,next_subject_index=len(subjects) + 1)
 
     except mysql.connector.Error as err:
         return f"Database error: {err}"
 
     finally:
-        cursor.close()
-        connection.close()
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+
+@student_bp.route('/edit_subject/<int:student_id>', methods=['POST'])
+@login_required
+def edit_subject(student_id):
+    log_session()
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        subject_id = request.form.get('subject_id')
+        subject_score = request.form.get('subject_score')
+        subject_progress = request.form.get('subject_progress')
+
+        
+        if subject_id and subject_score and subject_progress:
+            cursor.execute("""
+                UPDATE Student_Subject
+                SET subject_score = %s, subject_progress = %s
+                WHERE student_id = %s AND subject_id = %s
+            """, (subject_score, subject_progress, student_id, subject_id))
+
+            
+            connection.commit()
+
+            flash("Subject updated successfully!", "success") 
+        else:
+            flash("All fields are required!", "error")
+
+        return redirect(url_for('student.edit_student', student_id=student_id))
+
+    except mysql.connector.Error as err:
+        flash(f"Database error: {err}", "error")
+        return redirect(url_for('student.edit_student', student_id=student_id))
+
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+
+@student_bp.route('/delete_subject/<int:student_id>', methods=['POST'])
+@login_required
+def delete_subject(student_id):
+    subject_id = request.form.get('subject_id')
+
+    if not subject_id:
+        flash("No subject selected for deletion.", "error")
+        return redirect(url_for('student.edit_student', student_id=student_id))
+
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        delete_query = "DELETE FROM Student_Subject WHERE subject_id = %s AND student_id = %s"
+        cursor.execute(delete_query, (subject_id, student_id))
+
+        connection.commit()
+
+        flash("Subject deleted successfully!", "success")
+
+    except mysql.connector.Error as err:
+        flash(f"Error deleting subject: {err}", "error")
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+    return redirect(url_for('student.edit_student', student_id=student_id))
+
+
+
+
+@student_bp.route('/add_subject/<int:student_id>', methods=['POST'])
+@login_required
+def add_subject(student_id):
+    # {{ url_for('student.add_subject', student_id=student.student_id) }}
+    # import pdb; pdb.set_trace()
+    log_session()
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        subject_id = request.form.get('subject_id')
+        subject_score = request.form.get('subject_score')
+        subject_progress = request.form.get('subject_progress')
+
+        if subject_id and subject_score and subject_progress:
+            cursor.execute("""
+                INSERT INTO Student_Subject (student_id, subject_id, subject_score, subject_progress)
+                VALUES (%s, %s, %s, %s)
+            """, (student_id, subject_id, subject_score, subject_progress))
+
+            connection.commit()
+
+        return redirect(url_for('student.edit_student', student_id=student_id))
+
+    except mysql.connector.Error as err:
+        return f"Database error: {err}"
+
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+
+@student_bp.route('/cancel_changes/<int:student_id>', methods=['POST'])
+@login_required
+def cancel_changes(student_id):
+    """Cancel all changes and redirect back to the student profile."""
+    return redirect(url_for('student.student_profile', student_id=student_id))
+
+@student_bp.route('/new_student', methods=['GET', 'POST'])
+@login_required
+def new_student():
+    log_session()
+
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        if request.method == 'POST':
+            student_name = request.form.get('student_name')
+            student_age = request.form.get('student_age')
+            parent_name = request.form.get('parent_name')
+            parent_contact = request.form.get('parent_contact')
+            school_id = request.form.get('school_id')
+            grade_id = request.form.get('grade_id')
+            student_documentation = request.form.get('student_documentation', '')
+
+            
+            if not student_name or not parent_name or not parent_contact or not school_id or not grade_id:
+                flash("All required fields must be filled!", "error")
+                return redirect(url_for('student.new_student'))
+
+            
+            cursor.execute("""
+                INSERT INTO Student (student_name, student_age, parent_name, parent_contact, student_documentation, location_id, school_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (student_name, student_age, parent_name, parent_contact, student_documentation, g.location, school_id))
+            connection.commit()
+
+            
+            student_id = cursor.lastrowid
+
+            
+            cursor.execute("""
+                INSERT INTO Student_school_grade (student_id, school_id, grade_id)
+                VALUES (%s, %s, %s)
+            """, (student_id, school_id, grade_id))
+            connection.commit()
+
+            
+            flash("Student added successfully!", "success")
+            return redirect(url_for('student.student_profile', student_id=student_id))
+
+        
+        cursor.execute("SELECT * FROM School")
+        schools = cursor.fetchall()
+
+        cursor.execute("SELECT * FROM Grade")
+        grades = cursor.fetchall()
+
+        
+        return render_template('new_student.html', schools=schools, grades=grades, user=g.user)
+
+    except mysql.connector.Error as err:
+        flash(f"Database error: {err}", "error")
+        return redirect(url_for('student.new_student'))
+
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()

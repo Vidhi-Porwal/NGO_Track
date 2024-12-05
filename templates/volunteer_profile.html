@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% block title %}{{ volunteer.volunteer_name }}{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='volunteer_profile.css') }}">
+{% endblock %}
+<body>
+    {% block content %}
+    <main class="d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+        <div class="container">
+            <div class="card text-center col-md-8 col-lg-6 mx-auto">
+                <div class="text-center">
+                    <img src="{{ url_for('static', filename='uploads/profile.jpg') }}" 
+                         alt="Profile picture of {{ volunteer.volunteer_name }}" 
+                         style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 5px solid #ccc;">
+                </div>
+                <div class="text-center mt-3">
+                    <h2 class="mt-2 mb-0">{{ volunteer.volunteer_name }}</h2>
+                    <span>Contact No.: {{ volunteer.volunteer_contact }}</span>
+                    <div class="px-4 mt-1">
+                        <p>
+                            Email: {{ volunteer.volunteer_email }}<br>
+                            Address: {{ volunteer.volunteer_address if volunteer.volunteer_address else "Not Provided" }}<br>
+                            Location: {{ volunteer.location_name }}<br>
+                        </p>
+                    </div>
+                    <div class="buttons mt-4">
+                        <a href="#">
+                            <button class="btn btn-outline-primary px-4">Edit</button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    {% endblock %}
+</body>
+</html>

@@ -68,15 +68,16 @@ def signup():
                 user = cursor.fetchone()
                 # import pdb; pdb.set_trace()
                 if user :
-                    error = f"User {volunteer_name} is already registered."
-                    return redirect(url_for('signup'))
+                    # error = f"User {volunteer_name} is already registered."
+                    flash("Phone No. already registered.")
+                    return redirect(url_for('auth.login'))
                  
                 else:
                     print (location_id)
                     query = """INSERT INTO Volunteer (volunteer_name, volunteer_contact, volunteer_password, volunteer_email, volunteer_address, location_id) VALUES (%s, %s, %s, %s, %s, %s)"""
                     cursor.execute(query, (volunteer_name, volunteer_contact, volunteer_password, volunteer_email, volunteer_address, location_id))
                     connection.commit()
-                    return redirect(url_for("login"))
+                    return redirect(url_for("auth.login"))
 
             finally:
                 if connection.is_connected():
@@ -105,11 +106,12 @@ def login():
             if user:
                 session['user'] = user['volunteer_name']
                 session['location'] = user['location_id']
+                session['user_id'] = user['volunteer_id']
                 return redirect(url_for('home'))
 
             else:
                 flash("Invalid Phone No. or Password. Please try again.")
-                return redirect(url_for('login'))
+                return redirect(url_for('auth.login'))
 
         except mysql.connector.Error as err:
             return f"Database error: {err}"

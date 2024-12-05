@@ -1,0 +1,70 @@
+{% extends "layout.html" %}
+{% block title %}Edit {{ volunteer.volunteer_name }}{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='volunteer_profile.css') }}">
+{% endblock %}
+<body>
+    {% block content %}
+    <main class="d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+        <div class="container">
+            <form method="POST" action="{{ url_for('volunteer.edit_volunteer', volunteer_id=volunteer.volunteer_id) }}" enctype="multipart/form-data">
+                <div class="card text-center col-md-8 col-lg-6 mx-auto">
+                    <div class="text-center">
+                        <!-- Profile Picture Upload -->
+                        <img src="{{ url_for('static', filename='uploads/profile.jpg') }}" 
+                             alt="Profile picture of {{ volunteer.volunteer_name }}" 
+                             style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 5px solid #ccc;">
+                        <div class="mt-3">
+                            <label for="profile_picture" class="btn btn-outline-secondary btn-sm">Change Picture</label>
+                            <input type="file" id="profile_picture" name="profile_picture" class="d-none">
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+
+                        <!-- Contact -->
+                        <div class="form-group">
+                            <label for="volunteer_contact">Contact No.</label>
+                            <input type="text" class="form-control" id="volunteer_contact" name="volunteer_contact" 
+                                   value="{{ volunteer.volunteer_contact }}" required>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="form-group">
+                            <label for="volunteer_email">Email</label>
+                            <input type="email" class="form-control" id="volunteer_email" name="volunteer_email" 
+                                   value="{{ volunteer.volunteer_email }}" required>
+                        </div>
+
+                        <!-- Address -->
+                        <div class="form-group">
+                            <label for="volunteer_address">Address</label>
+                            <textarea class="form-control" id="volunteer_address" name="volunteer_address" rows="3">{{ volunteer.volunteer_address }}</textarea>
+                        </div>
+
+                        <!-- Location -->
+                        <div class="form-group">
+                            <label for="location_name">Location</label>
+                            <select class="form-control" id="location_name" name="location_id" required>
+                                {% for location in locations %}
+                                    <option value="{{ location.location_id }}" 
+                                            {% if location.location_id == volunteer.location_id %} selected {% endif %}>
+                                        {{ location.location_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <a href="{{ url_for('volunteer_profile', volunteer_id=volunteer.volunteer_id) }}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+    {% endblock %}
+</body>
+</html>
+

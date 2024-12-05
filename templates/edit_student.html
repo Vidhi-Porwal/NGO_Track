@@ -10,27 +10,24 @@
             </div>
             <div class="text-center mt-3">
                 <!-- Form to Edit Student Details -->
-                <form method="POST" action="{{ url_for('student.edit_student', student_id=student.student_id) }}" name="student_form">
-                    <!-- Student fields (same as before) -->
-                    <div class="form-group">
-                        <label for="student_age">Age</label>
-                        <input type="number" class="form-control" id="student_age" name="student_age" value="{{ student.student_age }}">
+                <form method="POST" action="{{ url_for('student.edit_student', student_id=student_id) }}" name="student_form">
+                    <div class="form-group d-flex align-items-center mb-3">
+                        <label for="student_age" class="mr-2" style="width: 150px;">Age:</label>
+                        <input type="number" class="form-control" id="student_age" name="student_age" min="0" value="{{ student.student_age }}" style="width: 800px;">
                     </div>
-
-                    <div class="form-group">
-                        <label for="parent_name">Parent Name</label>
-                        <input type="text" class="form-control" id="parent_name" name="parent_name" value="{{ student.parent_name }}">
+                    <div class="form-group d-flex align-items-center mb-3">
+                        <label for="parent_name" class="mr-2" style="width: 150px;">Parent Name:</label>
+                        <input type="text" class="form-control" id="parent_name" name="parent_name" value="{{ student.parent_name }}" style="width: 800px;">
                     </div>
-
-                    <div class="form-group">
-                        <label for="parent_contact">Parent Contact</label>
-                        <input type="text" class="form-control" id="parent_contact" name="parent_contact" value="{{ student.parent_contact }}">
+                    <div class="form-group d-flex align-items-center mb-3">
+                        <label for="parent_contact" class="mr-2" style="width: 150px;">Parent Contact:</label>
+                        <input type="text" class="form-control" id="parent_contact" name="parent_contact" value="{{ student.parent_contact }}" pattern="^[\d\+\-]{10,20}$" oninvalid="this.setCustomValidity('Please Enter Valid Input.')" oninput="this.setCustomValidity('')" style="width: 800px;">
                     </div>
-
-                    <!-- School dropdown -->
-                    <div class="form-group">
-                        <label for="school_name">School Name</label>
-                        <select class="form-control" id="school_name" name="school_id">
+                    <div class="form-group d-flex align-items-center mb-3">
+                        <label for="school_name" class="mr-2" style="width: 150px;">School Name:</label>
+                        <!-- <input type="number" class="form-control" id="school_name" name="school_name" value="6"style="width: 800px;"> -->
+                        <select class="form-control" id="school_name" name="school_id"  style="width: 800px;">
+                            <option value="" disabled selected>{{ student.school_name }}</option>
                             {% for school in schools %}
                                 <option value="{{ school.school_id }}" {% if school.school_id == student.school_id %} selected {% endif %}>
                                     {{ school.school_name }}
@@ -38,11 +35,10 @@
                             {% endfor %}
                         </select>
                     </div>
-
-                    <!-- Grade Year dropdown -->
-                    <div class="form-group">
-                        <label for="grade_year">Grade Year</label>
-                        <select class="form-control" id="grade_year" name="grade_id">
+                    <div class="form-group d-flex align-items-center mb-3">
+                        <label for="grade_year" class="mr-2" style="width: 150px;">Grade Year:</label>
+                        <select class="form-control" id="grade_year" name="grade_id" style="width: 800px;">
+                            <option value="" disabled selected>{{ student.grade_year }}</option>
                             {% for grade in grades %}
                                 <option value="{{ grade.grade_id }}" {% if grade.grade_id == student.grade_id %} selected {% endif %}>
                                     {{ grade.grade_year }}
@@ -50,18 +46,31 @@
                             {% endfor %}
                         </select>
                     </div>
-
-                    <!-- Documentation -->
-                    <div class="form-group">
-                        <label for="student_documentation">Documentation</label>
-                        <input type="text" class="form-control" id="student_documentation" name="student_documentation" value="{{ student.student_documentation }}">
+                    <div class="form-group d-flex align-items-center mb-3">
+                        <label for="student_documentation" class="mr-2" style="width: 150px;">Documentation:</label>
+                        <select class="form-control" id="student_documentation" name="student_documentation" style="width: 800px;">
+                            <option value="" disabled selected>{{ student.student_documentation }}</option>
+                            <option value="">None</option>
+                            <option value="Passport" {% if student.student_documentation == 'passport' %} selected {% endif %}>Passport</option>
+                            <option value="ID card" {% if student.student_documentation == 'ID card' %} selected {% endif %}>ID Card</option>
+                            <option value="Report card" {% if student.student_documentation == 'report card' %} selected {% endif %}>Report Card</option>
+                            <option value="Birth certificate" {% if student.student_documentation == 'birth certificate' %} selected {% endif %}>Birth Certificate</option>
+                        </select>
                     </div>
-
                     <button type="submit" class="btn btn-outline-primary mt-3">Save Changes</button>
                 </form>
 
-                <h3 class="mt-4">Existing Subjects</h3>
-                {% if subjects %}
+
+                <h3 class="mt-4">SUBJECTS</h3>
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <ul class="error-messages">
+                            {% for message in messages %}
+                                <li>{{ message }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                {% endwith %}
                 <table class="table table-striped">
                     <thead>
                         <tr>
@@ -73,46 +82,78 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% if subjects %}
                         {% for subject in subjects %}
-                        <tr id="subject-{{ subject.subject_id }}">
-                            <td>{{ loop.index }}</td>
-                            <td>{{ subject.subject_name }}</td>
-                            <td>
-                                <input type="number" class="form-control subject-score" name="subject_score_{{ subject.subject_id }}" value="{{ subject.subject_score }}" data-subject-id="{{ subject.subject_id }}" required>
-                            </td>
-                            <td>
-                                <input type="text" class="form-control subject-progress" name="subject_progress_{{ subject.subject_id }}" value="{{ subject.subject_progress }}" data-subject-id="{{ subject.subject_id }}" required>
-                            </td>
-                            <td>
-                                <!-- Update and Delete buttons -->
-                                <button type="button" class="btn btn-outline-primary btn-sm update-btn" data-subject-id="{{ subject.subject_id }}">Update</button>
-                                <button type="button" class="btn btn-outline-danger btn-sm delete-btn" data-subject-id="{{ subject.subject_id }}">Delete</button>
-                            </td>
-                        </tr>
+                            <tr id="subject-{{ subject.subject_id }}">
+                                <td>{{ loop.index }}</td>
+                                <td>{{ subject.subject_name }}</td>
+                                <td>
+                                    <!-- Update Form -->
+                                    <form action="{{ url_for('student.edit_subject', student_id=student.student_id) }}" method="POST">
+                                        <input type="hidden" name="subject_id" value="{{ subject.subject_id }}">
+                                        <input type="number" class="form-control subject-score" name="subject_score" value="{{ subject.subject_score }}" data-subject-id="{{ subject.subject_id }}" min="0" max="100" step="any" required style="width: 100px;">
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control subject-progress" name="subject_progress" value="{{ subject.subject_progress }}" data-subject-id="{{ subject.subject_id }}" required>
+                                </td>
+                                <td>
+                                    <button type="submit" class="btn btn-outline-primary btn-sm">Update</button>
+                                    </form>
+
+                                    <!-- Delete Form -->
+                                    <form action="{{ url_for('student.delete_subject', student_id=student.student_id) }}" method="POST" style="display:inline;">
+                                        <input type="hidden" name="subject_id" value="{{ subject.subject_id }}">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
                         {% endfor %}
+                        {% else %}
+                            <p>No subjects assigned to this student yet.</p>
+                        {% endif %}
+                        <tr>
+                            <form action="{{ url_for('student.add_subject', student_id=student_id) }}" method="POST">
+                            <td>{{ next_subject_index }}</td>
+                            <td>
+                                <select class="form-control" id="subject_name" name="subject_id">
+                                    <option value="" disabled selected>Select Subject</option>
+                                    {% for subject in subjects_list %}
+                                        <option value="{{ subject.subject_id }}">
+                                            {{ subject.subject_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number" class="form-control subject-score" id="subject_score" name="subject_score" value="0" min="0" max="100" step="any" required style="width: 100px;">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" id="subject_progress" name="subject_progress" placeholder="Remark">
+                            </td>
+                            <td>
+                                
+                                <button type="submit" class="btn btn-outline-primary btn-sm update-btn">Add Subject</button>
+                            
+                            </td>
+                            </form>
+                        </tr>
                     </tbody>
                 </table>
-                {% else %}
-                    <p>No subjects assigned to this student yet.</p>
-                {% endif %}
-                <div class="buttons mt-4">
-                    <!-- Cancel button to discard changes and return to student profile -->
+
+                <div class="buttons mt-4" style="display: flex; justify-content: center; gap: 10px;">
+                    <!-- Back Button -->
                     <a href="{{ url_for('student.student_profile', student_id=student.student_id) }}">
-                        <button class="btn btn-outline-secondary px-4">Cancel</button>
+                        <button class="btn btn-outline-primary px-4">Back</button>
                     </a>
+
+                    <!-- Cancel Button -->
+                    <!-- <form action="{{ url_for('student.cancel_changes', student_id=student.student_id) }}" method="POST">
+                        <button type="submit" class="btn btn-outline-secondary px-4">Cancel</button>
+                    </form> -->
                 </div>
             </div>
         </div>
     </div>
 </main>
 
-
 {% endblock %}
-
-
-
-<div class="buttons mt-4">
-                    <!-- Cancel button to discard changes and return to student profile -->
-                    <a href="{{ url_for('student.student_profile', student_id=student.student_id) }}">
-                        <button class="btn btn-outline-secondary px-4">Cancel</button>
-                    </a>

@@ -1,0 +1,153 @@
+{% extends "layout.html" %}
+{% block title %}Edit Student Information{% endblock %}
+
+{% block content %}
+<main class="d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+    <div class="container">
+        <div class="card text-center">
+            <div class="text-center">
+                <h2>Edit Information for {{ student.student_name }}</h2>
+            </div>
+            <div class="text-center mt-3">
+                <!-- Form to Edit Student Details -->
+                <form method="POST" action="{{ url_for('student.edit_student', student_id=student.student_id) }}" name="student_form">
+                    <!-- Student fields (same as before) -->
+                    <div class="form-group">
+                        <label for="student_age">Age</label>
+                        <input type="number" class="form-control" id="student_age" name="student_age" min="0" max="" value="{{ student.student_age }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="parent_name">Parent Name</label>
+                        <input type="text" class="form-control" id="parent_name" name="parent_name" value="{{ student.parent_name }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="parent_contact">Parent Contact</label>
+                        <input type="text" class="form-control" id="parent_contact" name="parent_contact" pattern="^[\d\+\-]{10,20}$" oninvalid="this.setCustomValidity('Please Enter Valid Input.')" oninput="this.setCustomValidity('')" value="{{ student.parent_contact }}">
+                    </div>
+
+                    <!-- School dropdown -->
+                    <div class="form-group">
+                        <label for="school_name">School Name</label>
+                        <select class="form-control" id="school_name" name="school_id">
+                            {% for school in schools %}
+                                <option value="{{ school.school_id }}" {% if school.school_id == student.school_id %} selected {% endif %}>
+                                    {{ school.school_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Grade Year dropdown -->
+                    <div class="form-group">
+                        <label for="grade_year">Grade Year</label>
+                        <select class="form-control" id="grade_year" name="grade_id">
+                            {% for grade in grades %}
+                                <option value="{{ grade.grade_id }}" {% if grade.grade_id == student.grade_id %} selected {% endif %}>
+                                    {{ grade.grade_year }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Documentation -->
+                    <div class="form-group">
+                        <label for="student_documentation">Documentation</label>
+                        <select class="form-control" id="student_documentation" name="student_documentation">
+                            <option value="">None</option> <!-- Value is empty for "None" -->
+                            <option value="passport">Passport</option>
+                            <option value="ID card">ID Card</option>
+                            <option value="report card">Report Card</option>
+                            <option value="birth certificate">Birth Certificate</option>
+                        </select>
+                    </div>
+
+
+
+                    <button type="submit" class="btn btn-outline-primary mt-3">Save Changes</button>
+                </form>
+
+
+                <h3 class="mt-4">Existing Subjects</h3>
+                {% if subjects %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>S.No.</th>
+                            <th>Subject Name</th>
+                            <th>Score</th>
+                            <th>Remark</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                            {% for subject in subjects %}
+                            <tr id="subject-{{ subject.subject_id }}">
+                                <td>{{ loop.index }}</td>
+                                <td>{{ subject.subject_name }}</td>
+                                <td>
+                                    <input type="number" class="form-control subject-score" name="subject_score_{{ subject.subject_id }}" value="{{ subject.subject_score }}" data-subject-id="{{ subject.subject_id }}" min="0" max="100" required>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control subject-progress" name="subject_progress_{{ subject.subject_id }}" value="{{ subject.subject_progress }}" data-subject-id="{{ subject.subject_id }}" required>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-outline-primary btn-sm update-btn" data-subject-id="{{ subject.subject_id }}">Update</button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm delete-btn" data-subject-id="{{ subject.subject_id }}">Delete</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            <tr>
+                                <td>{{ next_subject_index }}</td> <!-- Use the passed variable -->
+                                <td>
+                                    <select class="form-control" id="subject_name" name="subject_id">
+                                        <option value="" disabled selected>Select your subject</option>
+                                        {% for subject in subjects_list %}
+                                            <option value="{{ subject.subject_id }}" >
+                                                {{ subject.subject_name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control subject-score" id="subject_score" name="subject_score" value="0" min="0" max="100" required>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" id="subject_progress" name="subject_progress" placeholder="Remark" >
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-outline-primary btn-sm update-btn" data-subject-id="{{ student.student_id }}">Add Subject</button>
+                                </td>
+                            </tr>
+                    </tbody>
+                </table>
+                {% else %}
+                    <p>No subjects assigned to this student yet.</p>
+                {% endif %}
+
+                <div class="buttons mt-4">
+                    <!-- Cancel button to discard changes and return to student profile -->
+                    <a href="{{ url_for('student.student_profile', student_id=student.student_id) }}">
+                        <button class="btn btn-outline-primary px-4">Back</button>
+                    </a>
+                    <a href="{{ url_for('student.student_profile', student_id=student.student_id) }}">
+                        <button class="btn btn-outline-secondary px-4">Cancel</button>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+
+{% endblock %}
+
+
+
+<div class="buttons mt-4">
+                    <!-- Cancel button to discard changes and return to student profile -->
+                    <a href="{{ url_for('student.student_profile', student_id=student.student_id) }}">
+                        <button class="btn btn-outline-secondary px-4">Cancel</button>
+                    </a>

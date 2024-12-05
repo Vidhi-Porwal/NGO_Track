@@ -29,26 +29,26 @@
                     </div>
                     <h1>Subjects</h1>
                     {% if student_subjects %}
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <tr>
-                                <th>S.No.</th>
-                                <th>Subject Name</th>
-                                <th>Subject Score</th>
-                                <th>Remark</th>
-                            </tr>
-                            {% for stud in student_subjects %}
-                            <tr>
-                                <td>{{ loop.index }}</td>
-                                <td>{{ stud['subject_name'] }}</td>
-                                <td>{{ stud['subject_score'] }}</td>
-                                <td>{{ stud['subject_progress'] }}</td>
-                            </tr>
-                            {% endfor %}
-                        </table>
-                    </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <tr>
+                                    <th>S.No.</th>
+                                    <th>Subject Name</th>
+                                    <th>Subject Score</th>
+                                    <th>Remark</th>
+                                </tr>
+                                {% for stud in student_subjects %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ stud['subject_name'] }}</td>
+                                    <td>{{ stud['subject_score'] }}%</td>
+                                    <td>{{ stud['subject_progress'] }}</td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
                     {% else %}
-                    <p>No subjects found for this student.</p>
+                        <p>No subjects found for this student.</p>
                     {% endif %}
                     <div class="buttons mt-4">
                         <a href="{{ url_for('student.edit_student', student_id = student.student_id) }}">
@@ -59,6 +59,7 @@
             </div>
         </div>
     </main>
+
     {% endblock %}
 </body>
 </html>
