@@ -11,10 +11,11 @@
         <div class="container">
             <div class="card text-center col-md-8 col-lg-6 mx-auto">
                 <div class="text-center">
-                    <img src="{{ url_for('static', filename='uploads/profile.jpg') }}" 
-                         alt="Profile picture of {{ volunteer.volunteer_name }}" 
-                         style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 5px solid #ccc;">
+                    <img src="{{ url_for('static', filename='uploads/volunteer_' ~ volunteer.volunteer_id ~ '_profile.jpg') if file_exists('static/uploads/volunteer_' ~ volunteer.volunteer_id ~ '_profile.jpg') else url_for('static', filename='uploads/profile.jpg') }}" 
+                    alt="Profile picture of {{ volunteer.volunteer_name }}" 
+                    style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 5px solid #ccc;">
                 </div>
+
                 <div class="text-center mt-3">
                     <h2 class="mt-2 mb-0">{{ volunteer.volunteer_name }}</h2>
                     <span>Contact No.: {{ volunteer.volunteer_contact }}</span>
@@ -26,7 +27,7 @@
                         </p>
                     </div>
                     <div class="buttons mt-4">
-                        <a href="#">
+                        <a href="{{ url_for('edit_volunteer', volunteer_id=volunteer.volunteer_id) }}">
                             <button class="btn btn-outline-primary px-4">Edit</button>
                         </a>
                     </div>

@@ -3,6 +3,7 @@ from flask import Flask, flash, render_template, request, session, redirect, url
 from auth import auth_bp, get_db_connection, login_required
 from student import student_bp 
 import mysql.connector
+import os
 
 
 
@@ -167,11 +168,56 @@ def volunteer_profile():
                 cursor.close()
                 connection.close()
 
+@app.route('/edit_volunteer/<int:volunteer_id>', methods=['GET', 'POST'])
+def edit_volunteer(volunteer_id):
+    if request.method == 'POST':
+        volunteer_name = request.form['volunteer_name']
+        volunteer_contact = request.form['volunteer_contact']
+        volunteer_email = request.form['volunteer_email']
+        volunteer_address = request.form.get('volunteer_address', '')
+        location_id = request.form.get('location_id')
+
+        profile_picture = request.files.get('profile_picture')
+        if profile_picture:
+            picture_path = os.path.join('static/uploads', f'volunteer_{volunteer_id}_profile.jpg')
+            profile_picture.save(picture_path)
+
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        cursor.execute("""
+            UPDATE Volunteer
+            SET volunteer_name = %s, volunteer_contact = %s, 
+                volunteer_email = %s, volunteer_address = %s, 
+                location_id = %s
+            WHERE volunteer_id = %s
+        """, (volunteer_name, volunteer_contact, volunteer_email, volunteer_address, location_id, volunteer_id))
+        connection.commit()
+
+        return redirect(url_for('volunteer_profile', volunteer_id=volunteer_id))
+
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM Volunteer WHERE volunteer_id = %s", (volunteer_id,))
+    volunteer = cursor.fetchone()
+
+    cursor.execute("SELECT * FROM Location")
+    locations = cursor.fetchall()
+
+    return render_template('edit_volunteer.html',volunteer=volunteer, locations=locations )
+
+
+
 @app.route('/Dashboard')
 @login_required
 def Dashboard():
     return render_template('dashboard.html')
 
+@app.context_processor
+def utility_processor():
+    def file_exists(filepath):
+        return os.path.exists(filepath)
+    return dict(file_exists=file_exists)
 
 if __name__ == '__main__':
     app.run(debug=True)
