@@ -25,7 +25,7 @@
                     <div class="form-group d-flex align-items-center mb-3">
                         <label for="volunteer_name" class="mr-2" style="width: 150px;">Name</label>
                         <input type="text" class="form-control" id="volunteer_name" name="volunteer_name" 
-                               value="{{ volunteer.volunteer_name }}" style="width: 800px;">
+                               maxlength="50" value="{{ volunteer.volunteer_name }}" style="width: 800px;">
                     </div>
 
                     <!-- Contact -->
@@ -45,7 +45,7 @@
                     <!-- Address -->
                     <div class="form-group d-flex align-items-center mb-3">
                         <label for="volunteer_address" class="mr-2" style="width: 150px;">Address</label>
-                        <textarea class="form-control" id="volunteer_address" name="volunteer_address" rows="3" style="width: 800px;">{{ volunteer.volunteer_address }}</textarea>
+                        <textarea class="form-control" id="volunteer_address" name="volunteer_address" maxlength="150" rows="3" style="width: 800px;">{{ volunteer.volunteer_address }}</textarea>
                     </div>
 
                     <!-- Location Dropdown -->

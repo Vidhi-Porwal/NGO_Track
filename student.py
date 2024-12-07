@@ -113,18 +113,33 @@ def edit_student(student_id):
 
 
             if updates_1:
-                student_update_query_1 = f"""
-                    UPDATE Student_school_grade
-                    SET {', '.join(updates_1)}
-                    WHERE student_id = %s
-                """
-                values_1.append(student_id)  
-                print("SQL Query:", student_update_query_1)
-                print("Values:", values_1)  
-                cursor.execute(student_update_query_1, tuple(values_1))
+                school_id = None if not school_id else school_id
+                grade_id = None if not grade_id else grade_id
+
+                query_2 = "SELECT * FROM Student_school_grade WHERE student_id = %s"
+                cursor.execute(query_2, (student_id,))
+                student_exist = cursor.fetchone()
+
+                if student_exist:
+                    student_update_query_2 = f"""
+                        UPDATE Student_school_grade
+                        SET {', '.join(updates_1)}
+                        WHERE student_id = %s
+                    """
+                    values_1.append(student_id)
+                    cursor.execute(student_update_query_2, tuple(values_1))
+
+                else :
+                    student_insert_query = """
+                        INSERT INTO Student_school_grade (student_id, school_id, grade_id)
+                        VALUES (%s, %s, %s)
+                    """
+                    cursor.execute(student_insert_query, (student_id, school_id, grade_id))
+    
 
 
             connection.commit()
+            flash("Student updated successfully!", "success")
 
             return redirect(url_for('student.edit_student', student_id=student_id))
 
@@ -296,11 +311,12 @@ def new_student():
             student_documentation = request.form.get('student_documentation', '')
 
             
-            if not student_name or not parent_name or not parent_contact or not school_id or not grade_id:
+            if not student_name or not parent_name or not parent_contact :
                 flash("All required fields must be filled!", "error")
                 return redirect(url_for('student.new_student'))
 
-            
+            student_documentation = None if not student_documentation else student_documentation
+
             cursor.execute("""
                 INSERT INTO Student (student_name, student_age, parent_name, parent_contact, student_documentation, location_id, school_id)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
@@ -310,14 +326,21 @@ def new_student():
             
             student_id = cursor.lastrowid
 
-            
-            cursor.execute("""
-                INSERT INTO Student_school_grade (student_id, school_id, grade_id)
-                VALUES (%s, %s, %s)
-            """, (student_id, school_id, grade_id))
-            connection.commit()
+            if school_id and grade_id:
+                cursor.execute("""
+                    INSERT INTO Student_school_grade (student_id, school_id, grade_id)
+                    VALUES (%s, %s, %s)
+                """, (student_id, school_id, grade_id))
+                connection.commit()
 
-            
+            # cursor.execute("""
+            #     INSERT INTO Student_school_grade (student_id, school_id, grade_id)
+            #     VALUES (%s, %s, %s)
+            # """, (student_id, school_id if school_id else None, grade_id if grade_id else None))
+            # connection.commit()
+
+            # cursor.execute(student_add_query, tuple(value))
+
             flash("Student added successfully!", "success")
             return redirect(url_for('student.student_profile', student_id=student_id))
 
@@ -339,3 +362,38 @@ def new_student():
         if connection.is_connected():
             cursor.close()
             connection.close()
+
+@student_bp.route('/delete_student/<int:student_id>', methods=['POST'])
+@login_required
+def delete_student(student_id):
+    log_session()
+    if not student_id:
+        flash("No subject selected for deletion.", "error")
+        return redirect(url_for('student.edit_student', student_id=student_id))
+
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        # delete_student_subject_query = "DELETE FROM Student_Subject WHERE student_id = %s"
+        # cursor.execute(delete_student_subject_query, (student_id,))
+
+        # delete_student_school_grade_query = "DELETE FROM Student_school_grade WHERE student_id = %s"
+        # cursor.execute(delete_student_school_grade_query, (student_id,))
+
+        delete_student_query = "DELETE FROM Student WHERE student_id = %s"
+        cursor.execute(delete_student_query, (student_id,))
+
+        connection.commit()
+
+        flash("Student deleted successfully!", "success")
+
+    except mysql.connector.Error as err:
+        flash(f"Error deleting student: {err}", "error")
+        connection.rollback()
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+    return redirect(url_for('home'))

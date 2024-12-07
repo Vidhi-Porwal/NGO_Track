@@ -6,6 +6,12 @@
 <h1>Welcome back, {{ user }}!</h1>
 <hr class="featurette-divider">
 
+{% with messages = get_flashed_messages() %}  
+   {% if messages %}   
+      <p>{{ message }}</p>    
+   {% endif %}  
+{% endwith %} 
+
 
 <div class="row-container">
     <div class="row">

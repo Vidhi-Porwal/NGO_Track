@@ -125,6 +125,16 @@ CREATE TABLE IF NOT EXISTS Student_school_grade (
 );
 """
 
+create_activity_table = """
+CREATE TABLE IF NOT EXISTS Activity (
+    activity_id INT PRIMARY KEY AUTO_INCREMENT,
+    activity_image MEDIUMBLOB,
+    activity_title TEXT,
+    activity_description TEXT,
+    activity_date DATE
+);
+"""
+
 # Execute table creation queries
 execute_query(conn, create_location_table)
 execute_query(conn, create_volunteer_table)
@@ -134,6 +144,7 @@ execute_query(conn, create_grade_table)
 execute_query(conn, create_subject_table)
 execute_query(conn, create_student_subject_table)
 execute_query(conn, create_student_school_grade_table)
+execute_query(conn, create_activity_table)
 
 # Close the connection
 if conn.is_connected():

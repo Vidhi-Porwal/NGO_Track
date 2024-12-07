@@ -4,6 +4,7 @@ from auth import auth_bp, get_db_connection, login_required
 from student import student_bp 
 import mysql.connector
 import os
+import base64
 
 
 
@@ -16,7 +17,20 @@ app.register_blueprint(student_bp)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    
+    cursor.execute("SELECT * FROM Activity")
+    activities = cursor.fetchall()
+    
+    for activity in activities:
+        if activity['activity_image']:
+            activity['activity_image'] = base64.b64encode(activity['activity_image']).decode('utf-8')
+    
+    cursor.close()
+    connection.close()
+
+    return render_template('index.html', activities=activities)
 
 
 @app.route('/Location')
@@ -170,41 +184,56 @@ def volunteer_profile():
 
 @app.route('/edit_volunteer/<int:volunteer_id>', methods=['GET', 'POST'])
 def edit_volunteer(volunteer_id):
-    if request.method == 'POST':
-        volunteer_name = request.form['volunteer_name']
-        volunteer_contact = request.form['volunteer_contact']
-        volunteer_email = request.form['volunteer_email']
-        volunteer_address = request.form.get('volunteer_address', '')
-        location_id = request.form.get('location_id')
+    if 'user' in session:
+        user = session['user']
+        location_id = session['location']
+        volunteer_id = session['user_id']
 
-        profile_picture = request.files.get('profile_picture')
-        if profile_picture:
-            picture_path = os.path.join('static/uploads', f'volunteer_{volunteer_id}_profile.jpg')
-            profile_picture.save(picture_path)
+        try:
+            if request.method == 'POST':
+                volunteer_name = request.form['volunteer_name']
+                volunteer_contact = request.form['volunteer_contact']
+                volunteer_email = request.form['volunteer_email']
+                volunteer_address = request.form.get('volunteer_address', '')
+                location_id = request.form.get('location_id')
 
-        connection = get_db_connection()
-        cursor = connection.cursor()
-        cursor.execute("""
-            UPDATE Volunteer
-            SET volunteer_name = %s, volunteer_contact = %s, 
-                volunteer_email = %s, volunteer_address = %s, 
-                location_id = %s
-            WHERE volunteer_id = %s
-        """, (volunteer_name, volunteer_contact, volunteer_email, volunteer_address, location_id, volunteer_id))
-        connection.commit()
+                profile_picture = request.files.get('profile_picture')
+                if profile_picture:
+                    picture_path = os.path.join('static/uploads', f'volunteer_{volunteer_id}_profile.jpg')
+                    profile_picture.save(picture_path)
 
-        return redirect(url_for('volunteer_profile', volunteer_id=volunteer_id))
+                connection = get_db_connection()
+                cursor = connection.cursor()
+                cursor.execute("""
+                    UPDATE Volunteer
+                    SET volunteer_name = %s, volunteer_contact = %s, 
+                        volunteer_email = %s, volunteer_address = %s, 
+                        location_id = %s
+                    WHERE volunteer_id = %s
+                """, (volunteer_name, volunteer_contact, volunteer_email, volunteer_address, location_id, volunteer_id))
+                connection.commit()
 
-    connection = get_db_connection()
-    cursor = connection.cursor(dictionary=True)
+                return redirect(url_for('volunteer_profile', volunteer_id=volunteer_id))
 
-    cursor.execute("SELECT * FROM Volunteer WHERE volunteer_id = %s", (volunteer_id,))
-    volunteer = cursor.fetchone()
+            connection = get_db_connection()
+            cursor = connection.cursor(dictionary=True)
 
-    cursor.execute("SELECT * FROM Location")
-    locations = cursor.fetchall()
+            cursor.execute("SELECT * FROM Volunteer WHERE volunteer_id = %s", (volunteer_id,))
+            volunteer = cursor.fetchone()
 
-    return render_template('edit_volunteer.html',volunteer=volunteer, locations=locations )
+            cursor.execute("SELECT * FROM Location")
+            locations = cursor.fetchall()
+
+            return render_template('edit_volunteer.html',user= user, volunteer=volunteer, locations=locations )
+
+        except mysql.connector.Error as err:
+            return f"Error fetching volunteer profile: {err}"
+
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+
 
 
 

@@ -9,6 +9,11 @@
     {% block content %}
     <main class="d-flex justify-content-center align-items-center" style="min-height: 100vh;">
         <div class="container">
+            {% with messages = get_flashed_messages() %}  
+               {% if messages %}   
+                  <p>{{ message }}</p>    
+               {% endif %}  
+            {% endwith %} 
             <div class="card text-center">
                 <div class="text-center">
                     <img src="{{ url_for('static', filename='uploads/kid.jpg') }}" 
