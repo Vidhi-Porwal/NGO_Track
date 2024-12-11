@@ -43,7 +43,10 @@ def Location():
     page=request.args.get('page',1,type=int)
     per_page=5
     offset=(page-1)*per_page   #starting point for current page
-    
+    if page < 1:
+        flash('Page does not exist')
+        return redirect(url_for('Location', page=1))
+
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
 
@@ -68,7 +71,10 @@ def Schools():
     page=request.args.get('page',1,type=int)
     per_page=5
     offset=(page-1)*per_page   #starting point for current page
-    
+    if page < 1:
+        flash('Page does not exist')
+        return redirect(url_for('Schools', page=1))
+
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
 
@@ -97,6 +103,9 @@ def home():
                 page=request.args.get('page',1,type=int)
                 per_page=6
                 offset=(page-1)*per_page
+                if page < 1:
+                    flash('Page does not exist')
+                    return redirect(url_for('home', page=1))
 
 
                 connection = get_db_connection()

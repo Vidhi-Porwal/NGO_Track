@@ -6,6 +6,11 @@
 <main class="d-flex justify-content-center align-items-center" style="min-height: 100vh;">
     <div class="container text-center">
         <h1 class="my-4">LOCATIONS</h1>
+        {% with messages = get_flashed_messages() %}  
+           {% if messages %}   
+              <p>{{ message }}</p>    
+           {% endif %}  
+        {% endwith %} 
 
         <div class="table-responsive mt-4">
             <table class="table table-striped">

@@ -13,7 +13,7 @@
                 <form method="POST" action="{{ url_for('student.edit_student', student_id=student_id) }}" name="student_form">
                     <div class="form-group d-flex align-items-center mb-3">
                         <label for="student_age" class="mr-2" style="width: 150px;">Age:</label>
-                        <input type="number" class="form-control" id="student_age" name="student_age" min="0" max="20" value="{{ student.student_age }}" style="width: 800px;">
+                        <input type="number" class="form-control" id="student_age" name="student_age" min="3" max="20" value="{{ student.student_age }}" style="width: 800px;">
                     </div>
                     <div class="form-group d-flex align-items-center mb-3">
                         <label for="parent_name" class="mr-2" style="width: 150px;">Parent Name:</label>

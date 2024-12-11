@@ -2,6 +2,7 @@ from flask import Blueprint, request, render_template, redirect, url_for, sessio
 from functools import wraps
 import mysql.connector
 from werkzeug.security import check_password_hash, generate_password_hash
+import re
 
 # Define a Blueprint for auth-related routes
 auth_bp = Blueprint('auth', __name__)
@@ -14,6 +15,12 @@ def get_db_connection():
         password="Vidhi@3112",
         database="rha"
     )
+
+def ValidPassword(volunteer_password):
+    pattern = "^(?=.?[A-Z])(?=.?[a-z])(?=.?[0-9])(?=.?[#?!@$%^&*-]).{8,}$"
+    return re.match(pattern, volunteer_password)
+
+
 
 
 def login_required(f):
@@ -60,30 +67,44 @@ def signup():
         elif not location_id:
             error = 'Choose a location.'
 
-        if error is None :
-            try:
-                connection = get_db_connection()
-                cursor = connection.cursor(dictionary=True)
-                query = "SELECT * FROM Volunteer WHERE volunteer_contact = %s"
-                cursor.execute(query, (volunteer_contact,))
-                user = cursor.fetchone()
-                # import pdb; pdb.set_trace()
-                if user :
-                    # error = f"User {volunteer_name} is already registered."
-                    flash("Phone No. already registered.")
-                    return redirect(url_for('auth.login'))
-                 
-                else:
-                    print (location_id)
-                    query = """INSERT INTO Volunteer (volunteer_name, volunteer_contact, volunteer_password, volunteer_email, volunteer_address, location_id) VALUES (%s, %s, %s, %s, %s, %s)"""
-                    cursor.execute(query, (volunteer_name, volunteer_contact, generate_password_hash(volunteer_password), volunteer_email, volunteer_address, location_id))
-                    connection.commit()
-                    return redirect(url_for("auth.login"))
 
-            finally:
-                if connection.is_connected():
-                    cursor.close()
-                    connection.close()
+        elif len(volunteer_password) > 15:
+            flash('Password is too long', 'error')
+            return redirect(url_for('auth.signup    '))
+
+        elif len(volunteer_password) < 6:
+            flash('Password should include minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character', 'error')
+            return redirect(url_for('auth.signup'))    
+
+        # elif not ValidPassword(volunteer_password):
+        #     flash("Password should include minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character.", "error")
+        #     return redirect(url_for('auth.signup'))
+
+        else:
+            if error is None :
+                try:
+                    connection = get_db_connection()
+                    cursor = connection.cursor(dictionary=True)
+                    query = "SELECT * FROM Volunteer WHERE volunteer_contact = %s"
+                    cursor.execute(query, (volunteer_contact,))
+                    user = cursor.fetchone()
+                    # import pdb; pdb.set_trace()
+                    if user :
+                        # error = f"User {volunteer_name} is already registered."
+                        flash("Phone No. already registered.")
+                        return redirect(url_for('auth.login'))
+                     
+                    else:
+                        print (location_id)
+                        query = """INSERT INTO Volunteer (volunteer_name, volunteer_contact, volunteer_password, volunteer_email, volunteer_address, location_id) VALUES (%s, %s, %s, %s, %s, %s)"""
+                        cursor.execute(query, (volunteer_name, volunteer_contact, generate_password_hash(volunteer_password), volunteer_email, volunteer_address, location_id))
+                        connection.commit()
+                        return redirect(url_for("auth.login"))
+
+                finally:
+                    if connection.is_connected():
+                        cursor.close()
+                        connection.close()
 
         flash(error)
 
@@ -115,14 +136,14 @@ def login():
                 session['location'] = user['location_id']
                 session['user_id'] = user['volunteer_id']
 
-                query_1 = "SELECT * FROM Location WHERE location_POC_contact = %s and location_id = %s"
-                cursor.execute(query_1, (phone_no, user['location_id']))
-                user_1 = cursor.fetchone()
+                # query_1 = "SELECT * FROM Location WHERE location_POC_contact = %s and location_id = %s"
+                # cursor.execute(query_1, (phone_no, user['location_id']))
+                # user_1 = cursor.fetchone()
 
-                if user_1:
-                    return redirect(url_for('poc_home'))
-                else:
-                    return redirect(url_for('home'))
+                # if user_1:
+                #     return redirect(url_for('poc_home'))
+                # else:
+                return redirect(url_for('home'))
             else:
                 flash(error)
 
