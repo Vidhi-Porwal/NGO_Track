@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS Volunteer (
     volunteer_id INT PRIMARY KEY AUTO_INCREMENT,
     volunteer_name VARCHAR(100) NOT NULL,
     volunteer_contact VARCHAR(100) NOT NULL,
-    volunteer_password VARCHAR(128) NOT NULL,
+    volunteer_password VARCHAR(255) NOT NULL,
     volunteer_email VARCHAR(100) NOT NULL,
     volunteer_address VARCHAR(100),
     location_id INT,

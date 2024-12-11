@@ -1,6 +1,7 @@
 from flask import Blueprint, request, render_template, redirect, url_for, session, flash
 from functools import wraps
 import mysql.connector
+from werkzeug.security import check_password_hash, generate_password_hash
 
 # Define a Blueprint for auth-related routes
 auth_bp = Blueprint('auth', __name__)
@@ -75,7 +76,7 @@ def signup():
                 else:
                     print (location_id)
                     query = """INSERT INTO Volunteer (volunteer_name, volunteer_contact, volunteer_password, volunteer_email, volunteer_address, location_id) VALUES (%s, %s, %s, %s, %s, %s)"""
-                    cursor.execute(query, (volunteer_name, volunteer_contact, volunteer_password, volunteer_email, volunteer_address, location_id))
+                    cursor.execute(query, (volunteer_name, volunteer_contact, generate_password_hash(volunteer_password), volunteer_email, volunteer_address, location_id))
                     connection.commit()
                     return redirect(url_for("auth.login"))
 
@@ -94,31 +95,43 @@ def login():
     if request.method == 'POST':
         phone_no = request.form.get('phone_no')  # Use .get() to avoid KeyError
         password = request.form['password']
+        error = None
 
         # Check credentials in the database
         try:
             connection = get_db_connection()
             cursor = connection.cursor(dictionary=True)
-            query = "SELECT * FROM Volunteer WHERE volunteer_contact = %s AND volunteer_password = %s"
-            cursor.execute(query, (phone_no, password))
+            query = "SELECT * FROM Volunteer WHERE volunteer_contact = %s"
+            cursor.execute(query, (phone_no,))
             user = cursor.fetchone()
 
-            if user:
+            if user is None:
+                error = 'Incorrect phone number.'
+            elif not check_password_hash(user['volunteer_password'], password):
+                error = 'Incorrect password.'
+
+            if error is None:
                 session['user'] = user['volunteer_name']
                 session['location'] = user['location_id']
                 session['user_id'] = user['volunteer_id']
-                return redirect(url_for('home'))
 
+                query_1 = "SELECT * FROM Location WHERE location_POC_contact = %s and location_id = %s"
+                cursor.execute(query_1, (phone_no, user['location_id']))
+                user_1 = cursor.fetchone()
+
+                if user_1:
+                    return redirect(url_for('poc_home'))
+                else:
+                    return redirect(url_for('home'))
             else:
-                flash("Invalid Phone No. or Password. Please try again.")
-                return redirect(url_for('auth.login'))
+                flash(error)
 
         except mysql.connector.Error as err:
-            return f"Database error: {err}"
+            flash(f"Database error: {err}")
 
         finally:
             if connection.is_connected():
-                cursor.close()  
+                cursor.close()
                 connection.close()
 
     return render_template('login.html')

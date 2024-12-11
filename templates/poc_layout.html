@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <meta name="generator" content="Hugo 0.122.0">
+    <title>{% block title %}Welcome{% endblock %}</title>
+
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
+    <link href="{{url_for('static', filename='bootstrap.min.css')}}" rel="stylesheet">
+    <style>
+        /* Include your custom styles here */
+    </style>
+    <link href="{{ url_for('static', filename='css/sidebars.css') }}" rel="stylesheet">
+</head>
+<body>
+<main class="d-flex flex-nowrap">
+    <div class="d-flex flex-column flex-shrink-0 p-3 bg-body-tertiary vh-100" style="width: 280px;">
+    <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none">
+        <img src="{{ url_for('static', filename='uploads/rha_green.jpeg') }}" 
+             width="40" height="40" alt="RHA Logo" style="margin-right: 8px;" />
+        <span class="fs-4">Sidebar</span>
+    </a>
+    <hr>
+    <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item">
+            <a href="{{ url_for('home') }}" class="nav-link link-body-emphasis">Home</a>
+        </li>
+        <li><a href="{{ url_for('Location') }}" class="nav-link link-body-emphasis">Locations</a></li>
+        <li><a href="{{ url_for('Schools') }}" class="nav-link link-body-emphasis">Schools</a></li>
+        <li><a href="{{ url_for('student.new_student') }}" class="nav-link link-body-emphasis">Add Student</a></li>
+        <li><a href="#" class="nav-link link-body-emphasis">Volunteers</a></li>
+        <li><a href="#" class="nav-link link-body-emphasis">Edit Location</a></li>
+        <li><a href="#" class="nav-link link-body-emphasis">Edit Schools</a></li>
+        <li><a href="#" class="nav-link link-body-emphasis">Edit Activities</a></li>
+    </ul>
+    <hr>
+    <div class="dropdown">
+        <a href="#" class="d-flex align-items-center link-body-emphasis text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <img src="{{ url_for('static', filename='uploads/volunteer_' ~ (user or g.user) ~ '_profile.jpg') }}" 
+                 alt="Profile Image" 
+                 width="32" height="32" class="rounded-circle me-2"
+                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='uploads/profile.jpg') }}';">
+            <strong>{{ user or g.user }}</strong>
+        </a>
+        <ul class="dropdown-menu text-small shadow" aria-label="User menu">
+            <li><a class="dropdown-item" href="{{ url_for('volunteer_profile') }}">Profile</a></li>
+            <li><hr class="dropdown-divider" aria-hidden="true"></li>
+            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Log Out</a></li>
+        </ul>
+
+        </div>
+    </div>
+        <nav class="navbar navbar-light d-md-none">
+        <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </nav>
+
+    <div class="container">
+        {% block content %}
+        {% endblock %}
+    </div>
+</main>
+<script src="{{ url_for('static', filename='bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='sidebars.js') }}"></script>
+</body>
+</html>
