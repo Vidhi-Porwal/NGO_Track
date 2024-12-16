@@ -13,15 +13,15 @@
                 <form method="POST" action="{{ url_for('student.edit_student', student_id=student_id) }}" name="student_form">
                     <div class="form-group d-flex align-items-center mb-3">
                         <label for="student_age" class="mr-2" style="width: 150px;">Age:</label>
-                        <input type="number" class="form-control" id="student_age" name="student_age" min="3" max="20" value="{{ student.student_age }}" style="width: 800px;">
+                        <input type="number" class="form-control" id="student_age" name="student_age" min="3" max="20" maxlength="2" value="{{ student.student_age }}" style="width: 800px;">
                     </div>
                     <div class="form-group d-flex align-items-center mb-3">
                         <label for="parent_name" class="mr-2" style="width: 150px;">Parent Name:</label>
-                        <input type="text" class="form-control" id="parent_name" name="parent_name" maxlength="50" value="{{ student.parent_name }}" style="width: 800px;">
+                        <input type="text" class="form-control" id="parent_name" name="parent_name" maxlength="50" pattern="[A-Za-z\s]+" value="{{ student.parent_name }}" style="width: 800px;">
                     </div>
                     <div class="form-group d-flex align-items-center mb-3">
                         <label for="parent_contact" class="mr-2" style="width: 150px;">Parent Contact:</label>
-                        <input type="text" class="form-control" id="parent_contact" name="parent_contact" value="{{ student.parent_contact }}" pattern="^[\d\+\-]{10,20}$" oninvalid="this.setCustomValidity('Please Enter Valid Input.')" oninput="this.setCustomValidity('')" style="width: 800px;">
+                        <input type="tel" class="form-control" id="parent_contact" name="parent_contact" value="{{ student.parent_contact }}" pattern="^[\d\+\-]{10,20}$" oninvalid="this.setCustomValidity('Please Enter Valid Input.')" oninput="this.setCustomValidity('')" style="width: 800px;">
                     </div>
                     <div class="form-group d-flex align-items-center mb-3">
                         <label for="school_name" class="mr-2" style="width: 150px;">School Name:</label>
@@ -36,7 +36,7 @@
                         </select>
                     </div>
                     <div class="form-group d-flex align-items-center mb-3">
-                        <label for="grade_year" class="mr-2" style="width: 150px;">Grade Year:</label>
+                        <label for="grade_year" class="mr-2" style="width: 150px;">Grade:</label>
                         <select class="form-control" id="grade_year" name="grade_id" style="width: 800px;">
                             <option value="" disabled selected>{{ student.grade_year }}</option>
                             {% for grade in grades %}
@@ -94,7 +94,7 @@
                                         <input type="number" class="form-control subject-score" name="subject_score" value="{{ subject.subject_score }}" data-subject-id="{{ subject.subject_id }}" min="0" max="100" step="any" required style="width: 100px;">
                                 </td>
                                 <td>
-                                    <input type="text" class="form-control subject-progress" name="subject_progress" value="{{ subject.subject_progress }}" data-subject-id="{{ subject.subject_id }}" required>
+                                    <input type="text" class="form-control subject-progress" maxlength="150" name="subject_progress" value="{{ subject.subject_progress }}" data-subject-id="{{ subject.subject_id }}" pattern=".*[A-Za-z]+.*" title="Please include at least one letter." required>
                                 </td>
                                 <td>
                                     <button type="submit" class="btn btn-outline-primary btn-sm">Update</button>
@@ -112,30 +112,46 @@
                             <p>No subjects assigned to this student yet.</p>
                         {% endif %}
                         <tr>
-                            <form action="{{ url_for('student.add_subject', student_id=student_id) }}" method="POST">
-                            <td>{{ next_subject_index }}</td>
-                            <td>
-                                <select class="form-control" id="subject_name" name="subject_id">
-                                    <option value="" disabled selected>Select Subject</option>
-                                    {% for subject in subjects_list %}
-                                        <option value="{{ subject.subject_id }}">
-                                            {{ subject.subject_name }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </td>
-                            <td>
-                                <input type="number" class="form-control subject-score" id="subject_score" name="subject_score" value="0" min="0" max="100" step="any" required style="width: 100px;">
-                            </td>
-                            <td>
-                                <input type="text" class="form-control" id="subject_progress" name="subject_progress" maxlength="300" placeholder="Remark">
-                            </td>
-                            <td>
-                                
-                                <button type="submit" class="btn btn-outline-primary btn-sm update-btn">Add Subject</button>
-                            
-                            </td>
+                            <form action="{{ url_for('student.add_subject', student_id=student_id) }}" method="POST" id="add-subject-form">
+                                <td>{{ next_subject_index }}</td>
+                                <td>
+                                    <select class="form-control" id="subject_name" name="subject_id" required title="Please select a subject.">
+                                        <option value="" disabled selected>Select Subject</option>
+                                        {% for subject in subjects_list %}
+                                            <option value="{{ subject.subject_id }}">{{ subject.subject_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>   
+                                <td>
+                                    <input 
+                                        type="number" 
+                                        class="form-control subject-score" 
+                                        id="subject_score" 
+                                        name="subject_score" 
+                                        value="0" 
+                                        min="0" 
+                                        max="100" 
+                                        step="any" 
+                                        required 
+                                        title="Please enter a valid score between 0 and 100." 
+                                        style="width: 100px;">
+                                </td>
+                                <td>
+                                    <input 
+                                        type="text" 
+                                        class="form-control" 
+                                        id="subject_progress" 
+                                        name="subject_progress" 
+                                        maxlength="300" 
+                                        placeholder="Remark" 
+                                        required 
+                                        title="Please provide a remark.">
+                                </td>
+                                <td>
+                                    <button type="submit" class="btn btn-outline-primary btn-sm update-btn">Add Subject</button>
+                                </td>
                             </form>
+
                         </tr>
                     </tbody>
                 </table>

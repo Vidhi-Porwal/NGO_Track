@@ -5,15 +5,30 @@ from student import student_bp
 import mysql.connector
 import os
 import base64
-
-
+from datetime import timedelta, datetime
 
 app = Flask(__name__)
 app.secret_key = 'DEV'  # Set a secret key for session management
 
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(student_bp)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=1)
 
+@app.before_request
+def check_session_timeout():
+    session.permanent = True
+    session.modified = True
+    now = datetime.utcnow()
+
+    last_activity = session.get('last_activity')
+    if last_activity:
+        last_activity_time = datetime.strptime(last_activity, '%Y-%m-%d %H:%M:%S')
+        if now - last_activity_time > app.config['PERMANENT_SESSION_LIFETIME']:
+            session.clear()
+            flash("Your session has expired. Please log in again.")
+            return redirect(url_for('auth.login'))
+
+    session['last_activity'] = now.strftime('%Y-%m-%d %H:%M:%S')
 
 @app.route('/')
 def index():
@@ -191,57 +206,115 @@ def volunteer_profile():
                 cursor.close()
                 connection.close()
 
+# @app.route('/edit_volunteer/<int:volunteer_id>', methods=['GET', 'POST'])
+# def edit_volunteer(volunteer_id):
+#     if 'user' in session:
+#         user = session['user']
+#         location_id = session['location']
+
+#         try:
+#             if request.method == 'POST':
+#                 volunteer_contact = request.form['volunteer_contact']
+#                 volunteer_email = request.form['volunteer_email']
+#                 volunteer_address = request.form.get('volunteer_address', '')
+#                 location_id = request.form.get('location_id')
+
+#                 profile_picture = request.files.get('profile_picture')
+#                 if profile_picture:
+#                     picture_path = os.path.join('static/uploads', f'volunteer_{volunteer_id}_profile.jpg')
+#                     profile_picture.save(picture_path)
+
+#                 connection = get_db_connection()
+#                 cursor = connection.cursor()
+#                 cursor.execute("""
+#                     UPDATE Volunteer
+#                     SET volunteer_contact = %s, 
+#                         volunteer_email = %s, volunteer_address = %s, 
+#                         location_id = %s
+#                     WHERE volunteer_id = %s
+#                 """, (volunteer_contact, volunteer_email, volunteer_address, location_id, volunteer_id))
+#                 connection.commit()
+
+#                 return redirect(url_for('volunteer_profile', volunteer_id=volunteer_id))
+
+#             connection = get_db_connection()
+#             cursor = connection.cursor(dictionary=True)
+
+#             cursor.execute("SELECT * FROM Volunteer WHERE volunteer_id = %s", (volunteer_id,))
+#             volunteer = cursor.fetchone()
+
+#             cursor.execute("SELECT * FROM Location")
+#             locations = cursor.fetchall()
+
+#             return render_template('edit_volunteer.html',user= user, volunteer=volunteer, locations=locations )
+
+#         except mysql.connector.Error as err:
+#             return f"Error fetching volunteer profile: {err}"
+
+#         finally:
+#             if connection.is_connected():
+#                 cursor.close()
+#                 connection.close()
+
 @app.route('/edit_volunteer/<int:volunteer_id>', methods=['GET', 'POST'])
 def edit_volunteer(volunteer_id):
-    if 'user' in session:
-        user = session['user']
-        location_id = session['location']
-        volunteer_id = session['user_id']
+    if 'user' not in session:
+        # If 'user' is not in session, redirect to the login page
+        return redirect(url_for('auth.login'))
 
-        try:
-            if request.method == 'POST':
-                volunteer_name = request.form['volunteer_name']
-                volunteer_contact = request.form['volunteer_contact']
-                volunteer_email = request.form['volunteer_email']
-                volunteer_address = request.form.get('volunteer_address', '')
-                location_id = request.form.get('location_id')
+    user = session['user']
+    location_id = session['location']
 
-                profile_picture = request.files.get('profile_picture')
-                if profile_picture:
-                    picture_path = os.path.join('static/uploads', f'volunteer_{volunteer_id}_profile.jpg')
-                    profile_picture.save(picture_path)
+    try:
+        if request.method == 'POST':
+            volunteer_contact = request.form['volunteer_contact']
+            volunteer_email = request.form['volunteer_email']
+            volunteer_address = request.form.get('volunteer_address', '')
+            location_id = request.form.get('location_id')
 
-                connection = get_db_connection()
-                cursor = connection.cursor()
-                cursor.execute("""
-                    UPDATE Volunteer
-                    SET volunteer_name = %s, volunteer_contact = %s, 
-                        volunteer_email = %s, volunteer_address = %s, 
-                        location_id = %s
-                    WHERE volunteer_id = %s
-                """, (volunteer_name, volunteer_contact, volunteer_email, volunteer_address, location_id, volunteer_id))
-                connection.commit()
-
-                return redirect(url_for('volunteer_profile', volunteer_id=volunteer_id))
+            profile_picture = request.files.get('profile_picture')
+            if profile_picture:
+                picture_path = os.path.join('static/uploads', f'volunteer_{volunteer_id}_profile.jpg')
+                profile_picture.save(picture_path)
 
             connection = get_db_connection()
-            cursor = connection.cursor(dictionary=True)
+            cursor = connection.cursor()
+            cursor.execute("""
+                UPDATE Volunteer
+                SET volunteer_contact = %s, 
+                    volunteer_email = %s, volunteer_address = %s, 
+                    location_id = %s
+                WHERE volunteer_id = %s
+            """, (volunteer_contact, volunteer_email, volunteer_address, location_id, volunteer_id))
+            connection.commit()
 
-            cursor.execute("SELECT * FROM Volunteer WHERE volunteer_id = %s", (volunteer_id,))
-            volunteer = cursor.fetchone()
+            return redirect(url_for('volunteer_profile', volunteer_id=volunteer_id))
 
-            cursor.execute("SELECT * FROM Location")
-            locations = cursor.fetchall()
+        # GET request: Fetch volunteer data
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
 
-            return render_template('edit_volunteer.html',user= user, volunteer=volunteer, locations=locations )
+        cursor.execute("SELECT * FROM Volunteer WHERE volunteer_id = %s", (volunteer_id,))
+        volunteer = cursor.fetchone()
 
-        except mysql.connector.Error as err:
-            return f"Error fetching volunteer profile: {err}"
+        if not volunteer:
+            # If the volunteer is not found, return a 404 or error page
+            return f"Volunteer with ID {volunteer_id} not found.", 404
 
-        finally:
-            if connection.is_connected():
-                cursor.close()
-                connection.close()
+        cursor.execute("SELECT * FROM Location")
+        locations = cursor.fetchall()
+
+        return render_template('edit_volunteer.html', user=user, volunteer=volunteer, locations=locations)
+
+    except mysql.connector.Error as err:
+        # Handle database errors with a valid response
+        return f"Error fetching volunteer profile: {err}", 500
+
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
 
 @app.route('/poc_home', methods=['GET', 'POST'])
 @login_required

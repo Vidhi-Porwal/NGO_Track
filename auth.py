@@ -55,7 +55,7 @@ def signup():
         error = None
 
         if not volunteer_name:
-            error = 'Name is required.'
+            error = 'Name is required.' 
         elif not volunteer_contact:
             error = 'Contact is required.'
         elif not volunteer_email:
@@ -70,7 +70,7 @@ def signup():
 
         elif len(volunteer_password) > 15:
             flash('Password is too long', 'error')
-            return redirect(url_for('auth.signup    '))
+            return redirect(url_for('auth.signup'))
 
         elif len(volunteer_password) < 6:
             flash('Password should include minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character', 'error')
