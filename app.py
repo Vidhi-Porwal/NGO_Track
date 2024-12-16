@@ -12,7 +12,7 @@ app.secret_key = 'DEV'  # Set a secret key for session management
 
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(student_bp)
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=1)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
 
 @app.before_request
 def check_session_timeout():
@@ -108,11 +108,10 @@ def Schools():
 @login_required
 def home():
     if request.method == 'GET':
-        print("Session content:", session)  # This will show the session contents in the console
+        print("Session content:", session)
         if 'user' in session:
             user = session['user']
             location_id = session['location']
-
 
             try:
                 page=request.args.get('page',1,type=int)
@@ -162,6 +161,7 @@ def home():
                     connection.close()
 
         else:
+            print('nothing_phone')
             flash("You need to log in to view this page.")
             return redirect(url_for('auth.login'))
     return render_template('home.html', user=user)

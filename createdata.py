@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS Volunteer (
     volunteer_password VARCHAR(255) NOT NULL,
     volunteer_email VARCHAR(100) NOT NULL,
     volunteer_address VARCHAR(100),
+    session_id VARCHAR(255),
     location_id INT,
     FOREIGN KEY (location_id) REFERENCES Location(location_id) ON DELETE CASCADE ON UPDATE CASCADE
 );

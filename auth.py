@@ -1,9 +1,14 @@
-from flask import Blueprint, request, render_template, redirect, url_for, session, flash
+from flask import Flask, Blueprint, request, render_template, redirect, url_for, session, flash
 from functools import wraps
 import mysql.connector
 from werkzeug.security import check_password_hash, generate_password_hash
 import re
+import uuid
 
+
+
+app = Flask(__name__)
+app.secret_key = 'DEV' 
 # Define a Blueprint for auth-related routes
 auth_bp = Blueprint('auth', __name__)
 
@@ -111,6 +116,28 @@ def signup():
     return render_template('signup.html', location = location)
 
 
+@app.before_request
+def check_session():
+    if 'user' in session:
+        user_id = session['user_id']
+        session_id = session['session_id']
+        print("user_id",user_id)
+        print("session_id",session_id)
+
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT session_id FROM Volunteer WHERE volunteer_id = %s", (user_id,))
+        user_session = cursor.fetchone()
+        print('user_sessionnnn',user_session)
+
+        if user_session and user_session['session_id'] != session_id:
+            print('agar session id match nahi ho rahi h')
+            session.clear()  # Log out the user
+            flash('You have been logged out due to a session conflict.', 'warning')
+            return redirect(url_for('auth.login'))
+
+
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -132,6 +159,7 @@ def login():
                 error = 'Incorrect password.'
 
             if error is None:
+                print('koii error nhi h user me')
                 session['user'] = user['volunteer_name']
                 session['location'] = user['location_id']
                 session['user_id'] = user['volunteer_id']
@@ -143,6 +171,19 @@ def login():
                 # if user_1:
                 #     return redirect(url_for('poc_home'))
                 # else:
+
+                session_id = str(uuid.uuid4())
+                print('session_id',session_id)
+                # session['user_id'] = user.id  # Store user id in session
+                session['session_id'] = session_id  # Store session_id in the session
+
+                # Store the session_id in the database for the user
+                connection = get_db_connection()
+                cursor = connection.cursor()
+                cursor.execute("UPDATE Volunteer SET session_id = %s WHERE volunteer_id = %s", (session_id, session['user_id']))
+                print('everything is done')
+                connection.commit()
+
                 return redirect(url_for('home'))
             else:
                 flash(error)
