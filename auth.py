@@ -118,23 +118,36 @@ def signup():
 
 @app.before_request
 def check_session():
-    if 'user' in session:
+    if 'user_id' in session and 'session_id' in session:
         user_id = session['user_id']
         session_id = session['session_id']
-        print("user_id",user_id)
-        print("session_id",session_id)
 
-        connection = get_db_connection()
-        cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT session_id FROM Volunteer WHERE volunteer_id = %s", (user_id,))
-        user_session = cursor.fetchone()
-        print('user_sessionnnn',user_session)
+        try:
+            connection = get_db_connection()
+            cursor = connection.cursor(dictionary=True)
 
-        if user_session and user_session['session_id'] != session_id:
-            print('agar session id match nahi ho rahi h')
-            session.clear()  # Log out the user
-            flash('You have been logged out due to a session conflict.', 'warning')
+            
+            cursor.execute("SELECT session_id FROM Volunteer WHERE volunteer_id = %s", (user_id,))
+            db_session = cursor.fetchone()
+            print(db_session)
+
+            if not db_session or db_session['session_id'] != session_id:
+                session.clear()  # Clear session data
+                print("000000000000000000000000000000000000000000")
+                flash("You have been logged out due to a session conflict.", "warning")
+                return redirect(url_for('auth.login'))
+
+        except mysql.connector.Error as err:
+            flash(f"Database error: {err}", "error")
+            session.clear()
             return redirect(url_for('auth.login'))
+
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+
+
 
 
 
@@ -159,30 +172,16 @@ def login():
                 error = 'Incorrect password.'
 
             if error is None:
-                print('koii error nhi h user me')
+                session_id = str(uuid.uuid4())
+                print('New session ID:' ,session_id)
+                cursor.execute("UPDATE Volunteer SET session_id = %s WHERE volunteer_id = %s", (session_id, user['volunteer_id']))
+                connection.commit()
+
                 session['user'] = user['volunteer_name']
                 session['location'] = user['location_id']
                 session['user_id'] = user['volunteer_id']
-
-                # query_1 = "SELECT * FROM Location WHERE location_POC_contact = %s and location_id = %s"
-                # cursor.execute(query_1, (phone_no, user['location_id']))
-                # user_1 = cursor.fetchone()
-
-                # if user_1:
-                #     return redirect(url_for('poc_home'))
-                # else:
-
-                session_id = str(uuid.uuid4())
-                print('session_id',session_id)
-                # session['user_id'] = user.id  # Store user id in session
-                session['session_id'] = session_id  # Store session_id in the session
-
-                # Store the session_id in the database for the user
-                connection = get_db_connection()
-                cursor = connection.cursor()
-                cursor.execute("UPDATE Volunteer SET session_id = %s WHERE volunteer_id = %s", (session_id, session['user_id']))
-                print('everything is done')
-                connection.commit()
+                session['session_id'] = session_id
+                print('session saved in browser:' ,session)
 
                 return redirect(url_for('home'))
             else:
@@ -200,7 +199,18 @@ def login():
 
 @auth_bp.route('/logout')
 def logout():
-    session.pop('user', None)
+    user_id = session['user_id']
+
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    cursor.execute("""UPDATE Volunteer SET session_id = NULL WHERE volunteer_id = %s""" ,(user_id,))
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+    session.clear()
     flash("You have been logged out.")
     return redirect(url_for('auth.login'))
 

@@ -54,6 +54,7 @@ def Location():
     if 'user' in session:
         user = session['user']
         location_id = session['location']
+        user_id = session['user_id']
 
     page=request.args.get('page',1,type=int)
     per_page=5
@@ -74,7 +75,7 @@ def Location():
     connection.close()
     total_pages = ceil(total / per_page)
 
-    return render_template('location.html',user=user, location_i=location,page=page, total_pages=total_pages)
+    return render_template('location.html',user=user, user_id=user_id, location_i=location,page=page, total_pages=total_pages)
 
 @app.route('/Schools')
 @login_required
@@ -82,6 +83,7 @@ def Schools():
     if 'user' in session:
         user = session['user']
         location_id = session['location']
+        user_id = session['user_id']
 
     page=request.args.get('page',1,type=int)
     per_page=5
@@ -102,7 +104,7 @@ def Schools():
     connection.close()
     total_pages = ceil(total / per_page)
 
-    return render_template('school.html', user=user, schools=schools ,page=page, total_pages=total_pages)
+    return render_template('school.html', user=user, user_id=user_id, schools=schools ,page=page, total_pages=total_pages)
 
 @app.route('/home', methods=['GET', 'POST'])
 @login_required
@@ -112,6 +114,7 @@ def home():
         if 'user' in session:
             user = session['user']
             location_id = session['location']
+            user_id = session['user_id']
 
             try:
                 page=request.args.get('page',1,type=int)
@@ -148,7 +151,7 @@ def home():
         
                 total_pages = (total_students + per_page - 1) // per_page
                 
-                return render_template('home.html', user=user, students=students,page=page, total_pages=total_pages)
+                return render_template('home.html', user=user,user_id=user_id, students=students,page=page, total_pages=total_pages)
 
                    
 
@@ -195,7 +198,7 @@ def volunteer_profile():
             if not volunteer:
                 return render_template('404.html'), 404
 
-            return render_template('volunteer_profile.html', volunteer=volunteer,user = user, 
+            return render_template('volunteer_profile.html', volunteer=volunteer,user = user, user_id = volunteer_id,
                                    volunteer_subjects=volunteer_subjects)
 
         except mysql.connector.Error as err:
@@ -264,6 +267,7 @@ def edit_volunteer(volunteer_id):
 
     user = session['user']
     location_id = session['location']
+    user_id = session['user_id']
 
     try:
         if request.method == 'POST':
@@ -304,7 +308,7 @@ def edit_volunteer(volunteer_id):
         cursor.execute("SELECT * FROM Location")
         locations = cursor.fetchall()
 
-        return render_template('edit_volunteer.html', user=user, volunteer=volunteer, locations=locations)
+        return render_template('edit_volunteer.html', user=user, volunteer=volunteer, locations=locations, user_id= user_id)
 
     except mysql.connector.Error as err:
         # Handle database errors with a valid response

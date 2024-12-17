@@ -13,8 +13,9 @@ def log_session():
 def load_user_from_session():
     g.user = session.get('user')
     g.location = session.get('location')
+    g.user_id = session.get('user_id')
 
-    if not g.user or not g.location:
+    if not g.user or not g.location or not g.user_id:
         flash("Session expired. Please log in.")
         return redirect(url_for('auth.login'))
 
@@ -48,7 +49,7 @@ def student_profile(student_id):
         if not student:
             return render_template('404.html'), 404
 
-        return render_template('student_profile.html', student=student, user=g.user, student_subjects=student_subjects)
+        return render_template('student_profile.html', student=student, user=g.user, user_id = g.user_id , student_subjects=student_subjects)
 
     except mysql.connector.Error as err:
         return f"Error fetching student profile: {err}"
@@ -352,7 +353,7 @@ def new_student():
         grades = cursor.fetchall()
 
         
-        return render_template('new_student.html', schools=schools, grades=grades, user=g.user)
+        return render_template('new_student.html', schools=schools, grades=grades, user=g.user, user_id=g.user_id)
 
     except mysql.connector.Error as err:
         flash(f"Database error: {err}", "error")
