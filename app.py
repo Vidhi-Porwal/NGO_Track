@@ -33,20 +33,24 @@ def check_session_timeout():
 
 @app.route('/')
 def index():
-    connection = get_db_connection()
-    cursor = connection.cursor(dictionary=True)
-    
-    cursor.execute("SELECT * FROM Activity")
-    activities = cursor.fetchall()
-    
-    for activity in activities:
-        if activity['activity_image']:
-            activity['activity_image'] = base64.b64encode(activity['activity_image']).decode('utf-8')
-    
-    cursor.close()
-    connection.close()
+    if "user_id" in session:
+        return redirect(url_for('home'))
 
-    return render_template('index.html', activities=activities)
+    else :
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+        
+        cursor.execute("SELECT * FROM Activity")
+        activities = cursor.fetchall()
+        
+        for activity in activities:
+            if activity['activity_image']:
+                activity['activity_image'] = base64.b64encode(activity['activity_image']).decode('utf-8')
+        
+        cursor.close()
+        connection.close()
+
+        return render_template('index.html', activities=activities)
 
 
 @app.route('/Location')
