@@ -71,19 +71,9 @@ def signup():
             error = 'Password is required.'
         elif not location_id:
             error = 'Choose a location.'
-
-
-        elif len(volunteer_password) > 15:
-            flash('Password is too long', 'error')
-            return redirect(url_for('auth.signup'))
-
-        elif len(volunteer_password) < 6:
-            flash('Password should include minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character', 'error')
-            return redirect(url_for('auth.signup'))    
-
-        # elif not ValidPassword(volunteer_password):
-        #     flash("Password should include minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character.", "error")
-        #     return redirect(url_for('auth.signup'))
+        elif not valid_password(volunteer_password):
+            error = 'Password must include uppercase, lowercase, number, and special character.'
+    
 
         else:
             if error is None :
@@ -96,7 +86,7 @@ def signup():
                     # import pdb; pdb.set_trace()
                     if user :
                         # error = f"User {volunteer_name} is already registered."
-                        flash("Phone No. already registered.")
+                        flash("Phone number already registered. Please log in.", 'error')
                         return redirect(url_for('auth.login'))
                      
                     else:
@@ -105,6 +95,9 @@ def signup():
                         cursor.execute(query, (volunteer_name, volunteer_contact, generate_password_hash(volunteer_password), volunteer_email, volunteer_address, location_id))
                         connection.commit()
                         return redirect(url_for("auth.login"))
+
+                except mysql.connector.Error as err:
+                    flash(f"Database error: {err}", "error")
 
                 finally:
                     if connection.is_connected():
@@ -133,8 +126,7 @@ def check_session():
 
             if not db_session or db_session['session_id'] != session_id:
                 session.clear()  # Clear session data
-                print("000000000000000000000000000000000000000000")
-                flash("You have been logged out due to a session conflict.", "warning")
+                flash("You have been logged out because your account was logged in from another location.", "warning")
                 return redirect(url_for('auth.login'))
 
         except mysql.connector.Error as err:
@@ -199,7 +191,7 @@ def login():
 
 @auth_bp.route('/logout')
 def logout():
-    user_id = session['user_id']
+    user_id = session.get('user_id')
 
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)

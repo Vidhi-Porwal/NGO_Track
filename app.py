@@ -1,6 +1,6 @@
 from math import ceil
 from flask import Flask, flash, render_template, request, session, redirect, url_for, g
-from auth import auth_bp, get_db_connection, login_required
+from auth import auth_bp, get_db_connection, login_required, check_session
 from student import student_bp 
 import mysql.connector
 import os
@@ -10,6 +10,7 @@ from datetime import timedelta, datetime
 app = Flask(__name__)
 app.secret_key = 'DEV'  # Set a secret key for session management
 
+auth_bp.before_app_request(check_session)
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(student_bp)
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
