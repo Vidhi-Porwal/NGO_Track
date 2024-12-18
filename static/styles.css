@@ -41,6 +41,7 @@ form {
     margin-right: 20px;
     display: flex;
     flex-direction: column;
+    text-align: left;
 }
     
 label {
@@ -83,6 +84,22 @@ select:invalid {
 select option {
     color: #333;
 }
+
+/* Align "Remember me" with Checkbox */
+input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center; /* Align vertically */
+    gap: 10px; /* Optional spacing between checkbox and label */
+    text-align: left; /* Align text to the left */
+    margin-top: 15px; /* Add spacing above */
+    width: 100%; /* Ensure it spans the width of the form container */
+    justify-content: flex-start; /* Align content to the left */
+}
+
 
 /* Submit Button */
 .submit-btn {
