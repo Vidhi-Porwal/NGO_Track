@@ -92,12 +92,11 @@ input[type="checkbox"] {
 
 .checkbox-container {
     display: flex;
-    align-items: center; /* Align vertically */
-    gap: 10px; /* Optional spacing between checkbox and label */
-    text-align: left; /* Align text to the left */
-    margin-top: 15px; /* Add spacing above */
-    width: 100%; /* Ensure it spans the width of the form container */
-    justify-content: flex-start; /* Align content to the left */
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 10px;
+    width: 100%;
+    text-align: right;
 }
 
 
